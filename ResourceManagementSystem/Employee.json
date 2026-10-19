@@ -107,6 +107,15 @@
       "department": "IT",
       "salary": 71000,
       "status": 1
+    },
+    {
+      "id": 13,
+      "name": "Palash Sharma",
+      "email": "palashsharma@gmail.com",
+      "position": "Software Developer",
+      "department": "IT",
+      "salary": 80001,
+      "status": 1
     }
   ]
 }

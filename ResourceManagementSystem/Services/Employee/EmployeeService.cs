@@ -7,13 +7,12 @@ namespace ResourceManagementSystem.Services.Employee
     using System;
     using System.Globalization;
     using ResourceManagementSystem.Models;
-    using ResourceManagementSystem.Repositories.Employee;
 
     public class EmployeeService : IEmployeeService
     {
-        private readonly IEmployeeRepository _repo;
+        private readonly ResourceManagementSystem.Repositories.IBaseEntityRepository<Employee> _repo;
 
-        public EmployeeService(IEmployeeRepository repo)
+        public EmployeeService(ResourceManagementSystem.Repositories.IBaseEntityRepository<Employee> repo)
         {
             _repo = repo;
         }
@@ -65,6 +64,7 @@ namespace ResourceManagementSystem.Services.Employee
             }
 
             var existing = _repo.GetById(id);
+            // Patch placeholder - no functional change
             if (existing == null)
             {
                 Console.WriteLine("Employee not found. Press Enter to continue...");
@@ -113,8 +113,17 @@ namespace ResourceManagementSystem.Services.Employee
                 return;
             }
 
-            var ok = _repo.Deactivate(id);
-            Console.WriteLine(ok ? "Employee deactivated. Press Enter to continue..." : "Deactivate failed (not found). Press Enter to continue...");
+            var existing = _repo.GetById(id);
+            if (existing == null)
+            {
+                Console.WriteLine("Employee not found. Press Enter to continue...");
+                Console.ReadLine();
+                return;
+            }
+
+            existing.Status = EmployeeStatus.Inactive;
+            var ok = _repo.Update(existing);
+            Console.WriteLine(ok ? "Employee deactivated. Press Enter to continue..." : "Deactivate failed. Press Enter to continue...");
             Console.ReadLine();
         }
 
