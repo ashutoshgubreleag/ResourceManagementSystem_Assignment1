@@ -3,6 +3,7 @@ using System.Globalization;
 using ResourceManagementSystem.Models;
 // using ResourceManagementSystem.Repositories.Employee; (removed - JSON-backed repository now registered via BaseJsonRepository)
 using ResourceManagementSystem.Services.Employee;
+using ResourceManagementSystem.Services.Project;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.EntityFrameworkCore;
 using ResourceManagementSystem.Data;
@@ -16,8 +17,10 @@ var services = new ServiceCollection();
 // To use a specific JSON-backed implementation for Employee only, register:
 // services.AddScoped<IBaseEntityRepository<ResourceManagementSystem.Models.Employee>>(sp => new BaseJsonRepository<ResourceManagementSystem.Models.Employee>("Employee.json"));
 services.AddScoped<IEmployeeService, EmployeeService>();
+services.AddScoped<IProjectService, ProjectService>();
 using var serviceProvider = services.BuildServiceProvider();
 var service = serviceProvider.GetRequiredService<IEmployeeService>();
+var projectService = serviceProvider.GetRequiredService<IProjectService>();
 
 while (true)
 {
@@ -27,6 +30,10 @@ while (true)
     Console.WriteLine("2) Update employee");
     Console.WriteLine("3) Deactivate an employee");
     Console.WriteLine("4) Get all employees");
+    Console.WriteLine("5) Create client project");
+    Console.WriteLine("6) Get all projects");
+    Console.WriteLine("7) Allocate employee to project");
+    Console.WriteLine("8) Suggest available employees for project");
     Console.WriteLine("Q) Quit");
     Console.Write("Enter choice: ");
     var choice = Console.ReadLine();
@@ -46,6 +53,18 @@ while (true)
             break;
         case "4":
             service.ListEmployees();
+            break;
+        case "5":
+            projectService.CreateProject();
+            break;
+        case "6":
+            projectService.ListProjects();
+            break;
+        case "7":
+            projectService.AllocateEmployee();
+            break;
+        case "8":
+            projectService.SuggestAvailableEmployees();
             break;
         default:
             Console.WriteLine("Invalid choice. Press Enter to continue...");

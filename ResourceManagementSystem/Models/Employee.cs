@@ -2,6 +2,15 @@
 
 namespace ResourceManagementSystem.Models
 {
+    public class EmployeeSkill
+    {
+        [JsonPropertyName("name")]
+        public string Name { get; set; } = string.Empty;
+
+        [JsonPropertyName("proficiencyLevel")]
+        public int ProficiencyLevel { get; set; }
+    }
+
     public enum EmployeeStatus
     {
         Active = 0,
@@ -30,5 +39,8 @@ namespace ResourceManagementSystem.Models
 
         [JsonPropertyName("status")]
         public EmployeeStatus Status { get; set; } = EmployeeStatus.Active;
+
+        [JsonPropertyName("skills")]
+        public List<EmployeeSkill> Skills { get; set; } = new();
     }
 }

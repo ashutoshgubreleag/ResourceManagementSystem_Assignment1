@@ -7,7 +7,17 @@
       "position": "Software Engineer",
       "department": "IT",
       "salary": 60000,
-      "status": 0
+      "status": 0,
+      "skills": [
+        {
+          "name": "C#",
+          "proficiencyLevel": 4
+        },
+        {
+          "name": "SQL",
+          "proficiencyLevel": 3
+        }
+      ]
     },
     {
       "id": 2,
@@ -16,7 +26,17 @@
       "position": "Software Engineer",
       "department": "IT",
       "salary": 63000,
-      "status": 0
+      "status": 0,
+      "skills": [
+        {
+          "name": "C#",
+          "proficiencyLevel": 4
+        },
+        {
+          "name": "ASP.NET Core",
+          "proficiencyLevel": 4
+        }
+      ]
     },
     {
       "id": 3,
@@ -25,7 +45,17 @@
       "position": "Project Manager",
       "department": "IT",
       "salary": 75000,
-      "status": 0
+      "status": 0,
+      "skills": [
+        {
+          "name": "Project Management",
+          "proficiencyLevel": 5
+        },
+        {
+          "name": "Agile",
+          "proficiencyLevel": 4
+        }
+      ]
     },
     {
       "id": 4,
@@ -34,7 +64,17 @@
       "position": "HR Specialist",
       "department": "Human Resources",
       "salary": 50000,
-      "status": 0
+      "status": 0,
+      "skills": [
+        {
+          "name": "Recruiting",
+          "proficiencyLevel": 4
+        },
+        {
+          "name": "Communication",
+          "proficiencyLevel": 4
+        }
+      ]
     },
     {
       "id": 5,
@@ -43,7 +83,17 @@
       "position": "HR Specialist",
       "department": "Human Resources",
       "salary": 55000,
-      "status": 0
+      "status": 0,
+      "skills": [
+        {
+          "name": "Employee Relations",
+          "proficiencyLevel": 4
+        },
+        {
+          "name": "Excel",
+          "proficiencyLevel": 3
+        }
+      ]
     },
     {
       "id": 6,
@@ -52,7 +102,17 @@
       "position": "Sales Representative",
       "department": "Sales",
       "salary": 48000,
-      "status": 0
+      "status": 0,
+      "skills": [
+        {
+          "name": "Sales",
+          "proficiencyLevel": 4
+        },
+        {
+          "name": "Customer Service",
+          "proficiencyLevel": 4
+        }
+      ]
     },
     {
       "id": 7,
@@ -61,7 +121,17 @@
       "position": "Accountant",
       "department": "Finance",
       "salary": 52000,
-      "status": 0
+      "status": 0,
+      "skills": [
+        {
+          "name": "Accounting",
+          "proficiencyLevel": 5
+        },
+        {
+          "name": "Excel",
+          "proficiencyLevel": 4
+        }
+      ]
     },
     {
       "id": 8,
@@ -70,7 +140,17 @@
       "position": "Customer Support Specialist",
       "department": "Customer Support",
       "salary": 45000,
-      "status": 0
+      "status": 0,
+      "skills": [
+        {
+          "name": "Customer Support",
+          "proficiencyLevel": 4
+        },
+        {
+          "name": "Communication",
+          "proficiencyLevel": 4
+        }
+      ]
     },
     {
       "id": 9,
@@ -79,7 +159,17 @@
       "position": "Data Analyst",
       "department": "Analytics",
       "salary": 58000,
-      "status": 0
+      "status": 0,
+      "skills": [
+        {
+          "name": "Data Analysis",
+          "proficiencyLevel": 4
+        },
+        {
+          "name": "SQL",
+          "proficiencyLevel": 3
+        }
+      ]
     },
     {
       "id": 10,
@@ -88,7 +178,17 @@
       "position": "Sales Manager",
       "department": "Sales",
       "salary": 65000,
-      "status": 0
+      "status": 0,
+      "skills": [
+        {
+          "name": "Sales Management",
+          "proficiencyLevel": 5
+        },
+        {
+          "name": "Leadership",
+          "proficiencyLevel": 4
+        }
+      ]
     },
     {
       "id": 11,
@@ -97,7 +197,17 @@
       "position": "Developer",
       "department": "IT",
       "salary": 81000,
-      "status": 1
+      "status": 1,
+      "skills": [
+        {
+          "name": "C#",
+          "proficiencyLevel": 3
+        },
+        {
+          "name": "JavaScript",
+          "proficiencyLevel": 3
+        }
+      ]
     },
     {
       "id": 12,
@@ -106,7 +216,17 @@
       "position": "Developer",
       "department": "IT",
       "salary": 71000,
-      "status": 1
+      "status": 1,
+      "skills": [
+        {
+          "name": "C#",
+          "proficiencyLevel": 3
+        },
+        {
+          "name": "SQL",
+          "proficiencyLevel": 3
+        }
+      ]
     },
     {
       "id": 13,
@@ -115,7 +235,40 @@
       "position": "Software Developer",
       "department": "IT",
       "salary": 80001,
-      "status": 1
+      "status": 1,
+      "skills": [
+        {
+          "name": "C#",
+          "proficiencyLevel": 4
+        },
+        {
+          "name": "ASP.NET Core",
+          "proficiencyLevel": 3
+        }
+      ]
+    },
+    {
+      "id": 14,
+      "name": "Satendra Yadav",
+      "email": "satendrayadav@gmail.com",
+      "position": "Software Developer",
+      "department": "IT",
+      "salary": 90000,
+      "status": 0,
+      "skills": [
+        {
+          "name": "C#",
+          "proficiencyLevel": 4
+        },
+        {
+          "name": "ASP.NET Core",
+          "proficiencyLevel": 4
+        },
+        {
+          "name": "SQL",
+          "proficiencyLevel": 3
+        }
+      ]
     }
   ]
 }
