@@ -1,0 +1,84 @@
+{
+  "projectAllocations": [
+    {
+      "id": 1,
+      "projectId": 1,
+      "employeeId": 1,
+      "startDate": "2026-04-01T00:00:00",
+      "endDate": "2026-06-30T00:00:00",
+      "allocationPercentage": 50
+    },
+    {
+      "id": 2,
+      "projectId": 1,
+      "employeeId": 2,
+      "startDate": "2026-04-01T00:00:00",
+      "endDate": "2026-06-30T00:00:00",
+      "allocationPercentage": 75
+    },
+    {
+      "id": 3,
+      "projectId": 1,
+      "employeeId": 3,
+      "startDate": "2026-04-01T00:00:00",
+      "endDate": "2026-06-30T00:00:00",
+      "allocationPercentage": 25
+    },
+    {
+      "id": 4,
+      "projectId": 2,
+      "employeeId": 4,
+      "startDate": "2026-05-01T00:00:00",
+      "endDate": "2026-07-31T00:00:00",
+      "allocationPercentage": 50
+    },
+    {
+      "id": 5,
+      "projectId": 2,
+      "employeeId": 5,
+      "startDate": "2026-05-01T00:00:00",
+      "endDate": "2026-07-31T00:00:00",
+      "allocationPercentage": 50
+    },
+    {
+      "id": 6,
+      "projectId": 3,
+      "employeeId": 6,
+      "startDate": "2026-04-15T00:00:00",
+      "endDate": "2026-08-31T00:00:00",
+      "allocationPercentage": 75
+    },
+    {
+      "id": 7,
+      "projectId": 3,
+      "employeeId": 8,
+      "startDate": "2026-04-15T00:00:00",
+      "endDate": "2026-08-31T00:00:00",
+      "allocationPercentage": 40
+    },
+    {
+      "id": 8,
+      "projectId": 4,
+      "employeeId": 7,
+      "startDate": "2026-07-01T00:00:00",
+      "endDate": "2026-09-30T00:00:00",
+      "allocationPercentage": 60
+    },
+    {
+      "id": 9,
+      "projectId": 4,
+      "employeeId": 10,
+      "startDate": "2026-07-01T00:00:00",
+      "endDate": "2026-09-30T00:00:00",
+      "allocationPercentage": 100
+    },
+    {
+      "id": 10,
+      "projectId": 5,
+      "employeeId": 14,
+      "startDate": "2026-10-01T00:00:00",
+      "endDate": "2026-12-31T00:00:00",
+      "allocationPercentage": 50
+    }
+  ]
+}

@@ -269,6 +269,29 @@
           "proficiencyLevel": 3
         }
       ]
+    },
+    {
+      "id": 15,
+      "name": "Anita Verma",
+      "email": "anita.verma@company.com",
+      "position": "Business Analyst",
+      "department": "Analytics",
+      "salary": 68000,
+      "status": 0,
+      "skills": [
+        {
+          "name": "Data Analysis",
+          "proficiencyLevel": 5
+        },
+        {
+          "name": "SQL",
+          "proficiencyLevel": 4
+        },
+        {
+          "name": "Communication",
+          "proficiencyLevel": 4
+        }
+      ]
     }
   ]
 }
