@@ -5,6 +5,7 @@ using ResourceManagementSystem.Models;
 using ResourceManagementSystem.Services.Employee;
 using ResourceManagementSystem.Services.Project;
 using ResourceManagementSystem.Services.Notifications;
+using ResourceManagementSystem.Services.Reports;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.EntityFrameworkCore;
 using ResourceManagementSystem.Data;
@@ -19,10 +20,12 @@ var services = new ServiceCollection();
 // services.AddScoped<IBaseEntityRepository<ResourceManagementSystem.Models.Employee>>(sp => new BaseJsonRepository<ResourceManagementSystem.Models.Employee>("Employee.json"));
 services.AddScoped<IEmployeeService, EmployeeService>();
 services.AddScoped<IProjectService, ProjectService>();
+services.AddScoped<IReportService, ReportService>();
 services.AddSingleton<IAllocationNotificationService, SimulatedAllocationNotificationService>();
 using var serviceProvider = services.BuildServiceProvider();
 var service = serviceProvider.GetRequiredService<IEmployeeService>();
 var projectService = serviceProvider.GetRequiredService<IProjectService>();
+var reportService = serviceProvider.GetRequiredService<IReportService>();
 
 while (true)
 {
@@ -37,6 +40,9 @@ while (true)
     Console.WriteLine("7) Allocate employee to project");
     Console.WriteLine("8) Suggest available employees for project");
     Console.WriteLine("9) Release employee allocation");
+    Console.WriteLine("10) Bench report");
+    Console.WriteLine("11) Project staffing summary");
+    Console.WriteLine("12) Utilisation by department");
     Console.WriteLine("Q) Quit");
     Console.Write("Enter choice: ");
     var choice = Console.ReadLine();
@@ -71,6 +77,15 @@ while (true)
             break;
         case "9":
             projectService.ReleaseEmployee();
+            break;
+        case "10":
+            reportService.ShowBenchReport();
+            break;
+        case "11":
+            reportService.ShowProjectStaffingSummary();
+            break;
+        case "12":
+            reportService.ShowDepartmentUtilisation();
             break;
         default:
             Console.WriteLine("Invalid choice. Press Enter to continue...");
