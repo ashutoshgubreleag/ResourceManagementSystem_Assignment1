@@ -9,6 +9,7 @@ namespace ResourceManagementSystem.Services.Project
         void CreateProject();
         void ListProjects();
         void AllocateEmployee();
+        void ReleaseEmployee();
         void SuggestAvailableEmployees();
         bool TryAllocateEmployee(ProjectAllocation allocation, out string error);
         IEnumerable<EmployeeModel> GetAvailableEmployees(int projectId);

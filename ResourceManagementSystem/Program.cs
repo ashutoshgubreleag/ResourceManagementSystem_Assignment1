@@ -4,6 +4,7 @@ using ResourceManagementSystem.Models;
 // using ResourceManagementSystem.Repositories.Employee; (removed - JSON-backed repository now registered via BaseJsonRepository)
 using ResourceManagementSystem.Services.Employee;
 using ResourceManagementSystem.Services.Project;
+using ResourceManagementSystem.Services.Notifications;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.EntityFrameworkCore;
 using ResourceManagementSystem.Data;
@@ -18,6 +19,7 @@ var services = new ServiceCollection();
 // services.AddScoped<IBaseEntityRepository<ResourceManagementSystem.Models.Employee>>(sp => new BaseJsonRepository<ResourceManagementSystem.Models.Employee>("Employee.json"));
 services.AddScoped<IEmployeeService, EmployeeService>();
 services.AddScoped<IProjectService, ProjectService>();
+services.AddSingleton<IAllocationNotificationService, SimulatedAllocationNotificationService>();
 using var serviceProvider = services.BuildServiceProvider();
 var service = serviceProvider.GetRequiredService<IEmployeeService>();
 var projectService = serviceProvider.GetRequiredService<IProjectService>();
@@ -34,6 +36,7 @@ while (true)
     Console.WriteLine("6) Get all projects");
     Console.WriteLine("7) Allocate employee to project");
     Console.WriteLine("8) Suggest available employees for project");
+    Console.WriteLine("9) Release employee allocation");
     Console.WriteLine("Q) Quit");
     Console.Write("Enter choice: ");
     var choice = Console.ReadLine();
@@ -65,6 +68,9 @@ while (true)
             break;
         case "8":
             projectService.SuggestAvailableEmployees();
+            break;
+        case "9":
+            projectService.ReleaseEmployee();
             break;
         default:
             Console.WriteLine("Invalid choice. Press Enter to continue...");

@@ -1,6 +1,7 @@
 using System.Globalization;
 using ResourceManagementSystem.Models;
 using ResourceManagementSystem.Repositories;
+using ResourceManagementSystem.Services.Notifications;
 using EmployeeModel = ResourceManagementSystem.Models.Employee;
 
 namespace ResourceManagementSystem.Services.Project
@@ -10,15 +11,18 @@ namespace ResourceManagementSystem.Services.Project
         private readonly IBaseEntityRepository<ClientProject> _projectRepository;
         private readonly IBaseEntityRepository<EmployeeModel> _employeeRepository;
         private readonly IBaseEntityRepository<ProjectAllocation> _allocationRepository;
+        private readonly IAllocationNotificationService _notificationService;
 
         public ProjectService(
             IBaseEntityRepository<ClientProject> projectRepository,
             IBaseEntityRepository<EmployeeModel> employeeRepository,
-            IBaseEntityRepository<ProjectAllocation> allocationRepository)
+            IBaseEntityRepository<ProjectAllocation> allocationRepository,
+            IAllocationNotificationService notificationService)
         {
             _projectRepository = projectRepository;
             _employeeRepository = employeeRepository;
             _allocationRepository = allocationRepository;
+            _notificationService = notificationService;
         }
 
         public void CreateProject()
@@ -49,6 +53,48 @@ namespace ResourceManagementSystem.Services.Project
 
             var added = _projectRepository.Add(project);
             Console.WriteLine($"Created project with Id {added.Id}. Press Enter to continue...");
+            Console.ReadLine();
+        }
+
+        public void ReleaseEmployee()
+        {
+            Console.WriteLine("-- Release Employee Allocation --");
+            var projectId = ReadInteger("Project Id: ");
+            var employeeId = ReadInteger("Employee Id: ");
+            var project = _projectRepository.GetById(projectId);
+            var employee = _employeeRepository.GetById(employeeId);
+
+            if (project == null || employee == null)
+            {
+                Console.WriteLine("The project or employee was not found. Press Enter to continue...");
+                Console.ReadLine();
+                return;
+            }
+
+            var allocations = _allocationRepository.GetAll()
+                .Where(allocation => allocation.ProjectId == projectId && allocation.EmployeeId == employeeId)
+                .ToList();
+
+            if (allocations.Count == 0)
+            {
+                Console.WriteLine("No allocation was found for this project and employee. Press Enter to continue...");
+                Console.ReadLine();
+                return;
+            }
+
+            var releasedCount = 0;
+            foreach (var allocation in allocations)
+            {
+                if (_allocationRepository.Delete(allocation.Id))
+                {
+                    releasedCount++;
+                    _notificationService.NotifyReleased(employee, project, allocation);
+                }
+            }
+
+            Console.WriteLine(releasedCount == allocations.Count
+                ? "Employee allocation released. Press Enter to continue..."
+                : "Some allocations could not be released. Press Enter to continue...");
             Console.ReadLine();
         }
 
@@ -160,6 +206,7 @@ namespace ResourceManagementSystem.Services.Project
             }
 
             _allocationRepository.Add(allocation);
+            _notificationService.NotifyAllocated(employee, project, allocation);
             return true;
         }
 
