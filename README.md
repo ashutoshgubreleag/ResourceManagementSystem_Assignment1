@@ -159,4 +159,4 @@ Services depend on `IBaseEntityRepository<TEntity>`, so persistence can be chang
 
 The default registration in `Program.cs` uses `BaseJsonRepository<TEntity>`.
 
-This line is added to add the README.md file in feature branch with some changes.
+This line is changed by developer-b to add the README.md file in feature branch with some changes.
