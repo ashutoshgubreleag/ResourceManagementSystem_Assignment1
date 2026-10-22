@@ -158,3 +158,5 @@ Services depend on `IBaseEntityRepository<TEntity>`, so persistence can be chang
 - `BaseEntityRepository<TEntity>` for EF Core and SQLite.
 
 The default registration in `Program.cs` uses `BaseJsonRepository<TEntity>`.
+
+This line is added to add the README.md file in feature branch with some changes.
