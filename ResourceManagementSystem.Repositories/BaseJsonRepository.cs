@@ -16,7 +16,7 @@ namespace ResourceManagementSystem.Repositories
         public BaseJsonRepository(string? filePath = null)
         {
             var fileName = filePath ?? GetDefaultFileName();
-            _filePath = FindJsonPath(fileName) ?? fileName;
+            _filePath = ResolveJsonPath(fileName);
         }
 
         private static string GetDefaultFileName()
@@ -24,18 +24,42 @@ namespace ResourceManagementSystem.Repositories
             return typeof(TEntity).Name + ".json";
         }
 
-        private static string? FindJsonPath(string fileName)
+        private static string ResolveJsonPath(string fileName)
         {
-            var dir = AppContext.BaseDirectory;
-            var current = new DirectoryInfo(dir);
-            while (current != null)
+            var candidateDirectories = new List<string>
             {
-                var candidate = Path.Combine(current.FullName, fileName);
+                Path.Combine(AppContext.BaseDirectory, "JSONs"),
+                Path.Combine(AppContext.BaseDirectory, "..", "..", "..", "..", "ResourceManagementSystem.Database", "JSONs"),
+                Path.Combine(AppContext.BaseDirectory, "..", "..", "..", "..", "..", "ResourceManagementSystem.Database", "JSONs")
+            };
+
+            foreach (var directory in candidateDirectories)
+            {
+                var resolved = Path.GetFullPath(directory);
+                Directory.CreateDirectory(resolved);
+                var candidate = Path.Combine(resolved, fileName);
                 if (File.Exists(candidate))
                     return candidate;
-                current = current.Parent;
             }
-            return null;
+
+            var fallbackDirectory = Path.Combine(GetDatabaseRootDirectory(), "JSONs");
+            Directory.CreateDirectory(fallbackDirectory);
+            return Path.Combine(fallbackDirectory, fileName);
+        }
+
+        private static string GetDatabaseRootDirectory()
+        {
+            var dir = new DirectoryInfo(AppContext.BaseDirectory);
+            while (dir != null)
+            {
+                var candidate = Path.Combine(dir.FullName, "ResourceManagementSystem.Database");
+                if (Directory.Exists(candidate))
+                    return candidate;
+
+                dir = dir.Parent;
+            }
+
+            return AppContext.BaseDirectory;
         }
 
         private List<TEntity> ReadEntities()
