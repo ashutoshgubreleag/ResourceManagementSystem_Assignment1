@@ -16,6 +16,8 @@ public class MoneyOrderService : IMoneyOrderService
         _verificationRepository = verificationRepository;
     }
 
+    public IEnumerable<MoneyOrderEntity> GetAllOrders() => _moneyOrderRepository.GetAll();
+
     public IdentityVerificationEntity AddIdentityVerification(IdentityVerificationEntity verification)
     {
         if (verification == null) throw new ArgumentNullException(nameof(verification));

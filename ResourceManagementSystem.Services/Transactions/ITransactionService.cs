@@ -4,6 +4,7 @@ namespace ResourceManagementSystem.Services.Transactions;
 
 public interface ITransactionService
 {
+    IEnumerable<TransactionEntity> GetAllTransactions();
     TransactionEntity CreateTransaction(TransactionEntity transaction);
     TransactionEntity AddLineItem(TransactionEntity transaction, TransactionLineItemEntity item);
     TransactionEntity MarkPaid(int transactionId);

@@ -1,1 +1,242 @@
-[]
+[
+    {
+        "Id":  1,
+        "QuantityOnHand":  9,
+        "Sku":  "PKG-001",
+        "BranchCode":  "BR-001",
+        "UpdatedAt":  "2026-10-25T00:00:00Z",
+        "ReorderThreshold":  4
+    },
+    {
+        "Id":  2,
+        "QuantityOnHand":  10,
+        "Sku":  "PKG-002",
+        "BranchCode":  "BR-001",
+        "UpdatedAt":  "2026-10-25T00:00:00Z",
+        "ReorderThreshold":  5
+    },
+    {
+        "Id":  3,
+        "QuantityOnHand":  11,
+        "Sku":  "PKG-003",
+        "BranchCode":  "BR-001",
+        "UpdatedAt":  "2026-10-25T00:00:00Z",
+        "ReorderThreshold":  6
+    },
+    {
+        "Id":  4,
+        "QuantityOnHand":  12,
+        "Sku":  "PKG-004",
+        "BranchCode":  "BR-001",
+        "UpdatedAt":  "2026-10-25T00:00:00Z",
+        "ReorderThreshold":  3
+    },
+    {
+        "Id":  5,
+        "QuantityOnHand":  13,
+        "Sku":  "PKG-005",
+        "BranchCode":  "BR-001",
+        "UpdatedAt":  "2026-10-25T00:00:00Z",
+        "ReorderThreshold":  4
+    },
+    {
+        "Id":  6,
+        "QuantityOnHand":  14,
+        "Sku":  "PKG-006",
+        "BranchCode":  "BR-001",
+        "UpdatedAt":  "2026-10-25T00:00:00Z",
+        "ReorderThreshold":  5
+    },
+    {
+        "Id":  7,
+        "QuantityOnHand":  10,
+        "Sku":  "PKG-001",
+        "BranchCode":  "BR-002",
+        "UpdatedAt":  "2026-10-25T00:00:00Z",
+        "ReorderThreshold":  4
+    },
+    {
+        "Id":  8,
+        "QuantityOnHand":  12,
+        "Sku":  "PKG-002",
+        "BranchCode":  "BR-002",
+        "UpdatedAt":  "2026-10-25T00:00:00Z",
+        "ReorderThreshold":  5
+    },
+    {
+        "Id":  9,
+        "QuantityOnHand":  14,
+        "Sku":  "PKG-003",
+        "BranchCode":  "BR-002",
+        "UpdatedAt":  "2026-10-25T00:00:00Z",
+        "ReorderThreshold":  6
+    },
+    {
+        "Id":  10,
+        "QuantityOnHand":  16,
+        "Sku":  "PKG-004",
+        "BranchCode":  "BR-002",
+        "UpdatedAt":  "2026-10-25T00:00:00Z",
+        "ReorderThreshold":  3
+    },
+    {
+        "Id":  11,
+        "QuantityOnHand":  18,
+        "Sku":  "PKG-005",
+        "BranchCode":  "BR-002",
+        "UpdatedAt":  "2026-10-25T00:00:00Z",
+        "ReorderThreshold":  4
+    },
+    {
+        "Id":  12,
+        "QuantityOnHand":  20,
+        "Sku":  "PKG-006",
+        "BranchCode":  "BR-002",
+        "UpdatedAt":  "2026-10-25T00:00:00Z",
+        "ReorderThreshold":  5
+    },
+    {
+        "Id":  13,
+        "QuantityOnHand":  11,
+        "Sku":  "PKG-001",
+        "BranchCode":  "BR-003",
+        "UpdatedAt":  "2026-10-25T00:00:00Z",
+        "ReorderThreshold":  4
+    },
+    {
+        "Id":  14,
+        "QuantityOnHand":  14,
+        "Sku":  "PKG-002",
+        "BranchCode":  "BR-003",
+        "UpdatedAt":  "2026-10-25T00:00:00Z",
+        "ReorderThreshold":  5
+    },
+    {
+        "Id":  15,
+        "QuantityOnHand":  17,
+        "Sku":  "PKG-003",
+        "BranchCode":  "BR-003",
+        "UpdatedAt":  "2026-10-25T00:00:00Z",
+        "ReorderThreshold":  6
+    },
+    {
+        "Id":  16,
+        "QuantityOnHand":  20,
+        "Sku":  "PKG-004",
+        "BranchCode":  "BR-003",
+        "UpdatedAt":  "2026-10-25T00:00:00Z",
+        "ReorderThreshold":  3
+    },
+    {
+        "Id":  17,
+        "QuantityOnHand":  23,
+        "Sku":  "PKG-005",
+        "BranchCode":  "BR-003",
+        "UpdatedAt":  "2026-10-25T00:00:00Z",
+        "ReorderThreshold":  4
+    },
+    {
+        "Id":  18,
+        "QuantityOnHand":  26,
+        "Sku":  "PKG-006",
+        "BranchCode":  "BR-003",
+        "UpdatedAt":  "2026-10-25T00:00:00Z",
+        "ReorderThreshold":  5
+    },
+    {
+        "Id":  19,
+        "QuantityOnHand":  12,
+        "Sku":  "PKG-001",
+        "BranchCode":  "BR-004",
+        "UpdatedAt":  "2026-10-25T00:00:00Z",
+        "ReorderThreshold":  4
+    },
+    {
+        "Id":  20,
+        "QuantityOnHand":  16,
+        "Sku":  "PKG-002",
+        "BranchCode":  "BR-004",
+        "UpdatedAt":  "2026-10-25T00:00:00Z",
+        "ReorderThreshold":  5
+    },
+    {
+        "Id":  21,
+        "QuantityOnHand":  20,
+        "Sku":  "PKG-003",
+        "BranchCode":  "BR-004",
+        "UpdatedAt":  "2026-10-25T00:00:00Z",
+        "ReorderThreshold":  6
+    },
+    {
+        "Id":  22,
+        "QuantityOnHand":  24,
+        "Sku":  "PKG-004",
+        "BranchCode":  "BR-004",
+        "UpdatedAt":  "2026-10-25T00:00:00Z",
+        "ReorderThreshold":  3
+    },
+    {
+        "Id":  23,
+        "QuantityOnHand":  28,
+        "Sku":  "PKG-005",
+        "BranchCode":  "BR-004",
+        "UpdatedAt":  "2026-10-25T00:00:00Z",
+        "ReorderThreshold":  4
+    },
+    {
+        "Id":  24,
+        "QuantityOnHand":  32,
+        "Sku":  "PKG-006",
+        "BranchCode":  "BR-004",
+        "UpdatedAt":  "2026-10-25T00:00:00Z",
+        "ReorderThreshold":  5
+    },
+    {
+        "Id":  25,
+        "QuantityOnHand":  13,
+        "Sku":  "PKG-001",
+        "BranchCode":  "BR-005",
+        "UpdatedAt":  "2026-10-25T00:00:00Z",
+        "ReorderThreshold":  4
+    },
+    {
+        "Id":  26,
+        "QuantityOnHand":  18,
+        "Sku":  "PKG-002",
+        "BranchCode":  "BR-005",
+        "UpdatedAt":  "2026-10-25T00:00:00Z",
+        "ReorderThreshold":  5
+    },
+    {
+        "Id":  27,
+        "QuantityOnHand":  23,
+        "Sku":  "PKG-003",
+        "BranchCode":  "BR-005",
+        "UpdatedAt":  "2026-10-25T00:00:00Z",
+        "ReorderThreshold":  6
+    },
+    {
+        "Id":  28,
+        "QuantityOnHand":  28,
+        "Sku":  "PKG-004",
+        "BranchCode":  "BR-005",
+        "UpdatedAt":  "2026-10-25T00:00:00Z",
+        "ReorderThreshold":  3
+    },
+    {
+        "Id":  29,
+        "QuantityOnHand":  8,
+        "Sku":  "PKG-005",
+        "BranchCode":  "BR-005",
+        "UpdatedAt":  "2026-10-25T00:00:00Z",
+        "ReorderThreshold":  4
+    },
+    {
+        "Id":  30,
+        "QuantityOnHand":  13,
+        "Sku":  "PKG-006",
+        "BranchCode":  "BR-005",
+        "UpdatedAt":  "2026-10-25T00:00:00Z",
+        "ReorderThreshold":  5
+    }
+]

@@ -1,0 +1,35 @@
+@model List<ResourceManagementSystem.Database.Models.MoneyOrderEntity>
+@{
+    ViewData["Title"] = "Money orders";
+}
+
+<div class="d-flex justify-content-between align-items-center mb-3">
+    <h2>Money orders</h2>
+    <a asp-action="Create" class="btn btn-primary">Create money order</a>
+</div>
+
+<table class="table table-striped table-bordered">
+    <thead>
+        <tr>
+            <th>Id</th>
+            <th>Branch</th>
+            <th>Sender</th>
+            <th>Recipient</th>
+            <th>Amount</th>
+            <th>Status</th>
+        </tr>
+    </thead>
+    <tbody>
+        @foreach (var item in Model)
+        {
+            <tr>
+                <td>@item.Id</td>
+                <td>@item.BranchCode</td>
+                <td>@item.Sender</td>
+                <td>@item.Recipient</td>
+                <td>@item.Amount</td>
+                <td>@item.Status</td>
+            </tr>
+        }
+    </tbody>
+</table>

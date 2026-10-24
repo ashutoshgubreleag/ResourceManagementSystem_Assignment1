@@ -1,1 +1,1082 @@
-[]
+[
+    {
+        "TaxAmount":  1.1,
+        "Id":  1,
+        "BranchCode":  "BR-001",
+        "PaymentMethod":  0,
+        "Subtotal":  11,
+        "LineItems":  [
+                          {
+                              "TaxAmount":  1.1,
+                              "Id":  1,
+                              "ItemCode":  "PKG-001",
+                              "LineType":  1,
+                              "TransactionId":  1,
+                              "Quantity":  2,
+                              "Description":  "Express Mailer Pack",
+                              "UnitPrice":  5.5,
+                              "LineTotal":  12.1
+                          }
+                      ],
+        "VoidReason":  null,
+        "Status":  0,
+        "ClerkStaffId":  2,
+        "ClosedAt":  null,
+        "TotalAmount":  12.1,
+        "CreatedAt":  "2026-09-02T09:11:00Z",
+        "CounterTerminalId":  2
+    },
+    {
+        "TaxAmount":  2.48,
+        "Id":  2,
+        "BranchCode":  "BR-002",
+        "PaymentMethod":  1,
+        "Subtotal":  24.75,
+        "LineItems":  [
+                          {
+                              "TaxAmount":  2.48,
+                              "Id":  2,
+                              "ItemCode":  "PKG-002",
+                              "LineType":  0,
+                              "TransactionId":  2,
+                              "Quantity":  3,
+                              "Description":  "Priority Box Small",
+                              "UnitPrice":  8.25,
+                              "LineTotal":  27.23
+                          }
+                      ],
+        "VoidReason":  null,
+        "Status":  1,
+        "ClerkStaffId":  3,
+        "ClosedAt":  "2026-09-03T11:26:00Z",
+        "TotalAmount":  27.23,
+        "CreatedAt":  "2026-09-03T10:22:00Z",
+        "CounterTerminalId":  1
+    },
+    {
+        "TaxAmount":  4.7,
+        "Id":  3,
+        "BranchCode":  "BR-003",
+        "PaymentMethod":  2,
+        "Subtotal":  47,
+        "LineItems":  [
+                          {
+                              "TaxAmount":  4.7,
+                              "Id":  3,
+                              "ItemCode":  "PKG-003",
+                              "LineType":  1,
+                              "TransactionId":  3,
+                              "Quantity":  4,
+                              "Description":  "Priority Box Medium",
+                              "UnitPrice":  11.75,
+                              "LineTotal":  51.7
+                          }
+                      ],
+        "VoidReason":  null,
+        "Status":  2,
+        "ClerkStaffId":  4,
+        "ClosedAt":  null,
+        "TotalAmount":  51.7,
+        "CreatedAt":  "2026-09-04T11:33:00Z",
+        "CounterTerminalId":  2
+    },
+    {
+        "TaxAmount":  1.59,
+        "Id":  4,
+        "BranchCode":  "BR-004",
+        "PaymentMethod":  3,
+        "Subtotal":  15.9,
+        "LineItems":  [
+                          {
+                              "TaxAmount":  1.59,
+                              "Id":  4,
+                              "ItemCode":  "PKG-004",
+                              "LineType":  0,
+                              "TransactionId":  4,
+                              "Quantity":  1,
+                              "Description":  "Priority Box Large",
+                              "UnitPrice":  15.9,
+                              "LineTotal":  17.49
+                          }
+                      ],
+        "VoidReason":  null,
+        "Status":  3,
+        "ClerkStaffId":  5,
+        "ClosedAt":  "2026-09-05T13:52:00Z",
+        "TotalAmount":  17.49,
+        "CreatedAt":  "2026-09-05T12:44:00Z",
+        "CounterTerminalId":  1
+    },
+    {
+        "TaxAmount":  1.49,
+        "Id":  5,
+        "BranchCode":  "BR-005",
+        "PaymentMethod":  0,
+        "Subtotal":  14.9,
+        "LineItems":  [
+                          {
+                              "TaxAmount":  1.49,
+                              "Id":  5,
+                              "ItemCode":  "PKG-005",
+                              "LineType":  1,
+                              "TransactionId":  5,
+                              "Quantity":  2,
+                              "Description":  "Bubble Wrap Roll",
+                              "UnitPrice":  7.45,
+                              "LineTotal":  16.39
+                          }
+                      ],
+        "VoidReason":  null,
+        "Status":  0,
+        "ClerkStaffId":  6,
+        "ClosedAt":  null,
+        "TotalAmount":  16.39,
+        "CreatedAt":  "2026-09-06T13:55:00Z",
+        "CounterTerminalId":  2
+    },
+    {
+        "TaxAmount":  1.89,
+        "Id":  6,
+        "BranchCode":  "BR-001",
+        "PaymentMethod":  1,
+        "Subtotal":  18.9,
+        "LineItems":  [
+                          {
+                              "TaxAmount":  1.89,
+                              "Id":  6,
+                              "ItemCode":  "PKG-006",
+                              "LineType":  0,
+                              "TransactionId":  6,
+                              "Quantity":  3,
+                              "Description":  "Packing Tape 50m",
+                              "UnitPrice":  6.3,
+                              "LineTotal":  20.79
+                          }
+                      ],
+        "VoidReason":  null,
+        "Status":  1,
+        "ClerkStaffId":  7,
+        "ClosedAt":  "2026-09-07T15:18:00Z",
+        "TotalAmount":  20.79,
+        "CreatedAt":  "2026-09-07T14:06:00Z",
+        "CounterTerminalId":  1
+    },
+    {
+        "TaxAmount":  1.92,
+        "Id":  7,
+        "BranchCode":  "BR-002",
+        "PaymentMethod":  2,
+        "Subtotal":  19.2,
+        "LineItems":  [
+                          {
+                              "TaxAmount":  1.92,
+                              "Id":  7,
+                              "ItemCode":  "STN-001",
+                              "LineType":  1,
+                              "TransactionId":  7,
+                              "Quantity":  4,
+                              "Description":  "Ledger Notebook A4",
+                              "UnitPrice":  4.8,
+                              "LineTotal":  21.12
+                          }
+                      ],
+        "VoidReason":  "Duplicate receipt",
+        "Status":  2,
+        "ClerkStaffId":  8,
+        "ClosedAt":  null,
+        "TotalAmount":  21.12,
+        "CreatedAt":  "2026-09-08T15:17:00Z",
+        "CounterTerminalId":  2
+    },
+    {
+        "TaxAmount":  0.92,
+        "Id":  8,
+        "BranchCode":  "BR-003",
+        "PaymentMethod":  3,
+        "Subtotal":  9.2,
+        "LineItems":  [
+                          {
+                              "TaxAmount":  0.92,
+                              "Id":  8,
+                              "ItemCode":  "STN-002",
+                              "LineType":  0,
+                              "TransactionId":  8,
+                              "Quantity":  1,
+                              "Description":  "Business Folder Set",
+                              "UnitPrice":  9.2,
+                              "LineTotal":  10.12
+                          }
+                      ],
+        "VoidReason":  null,
+        "Status":  3,
+        "ClerkStaffId":  9,
+        "ClosedAt":  "2026-09-09T17:44:00Z",
+        "TotalAmount":  10.12,
+        "CreatedAt":  "2026-09-09T16:28:00Z",
+        "CounterTerminalId":  1
+    },
+    {
+        "TaxAmount":  3.68,
+        "Id":  9,
+        "BranchCode":  "BR-004",
+        "PaymentMethod":  0,
+        "Subtotal":  36.8,
+        "LineItems":  [
+                          {
+                              "TaxAmount":  3.68,
+                              "Id":  9,
+                              "ItemCode":  "STN-003",
+                              "LineType":  1,
+                              "TransactionId":  9,
+                              "Quantity":  2,
+                              "Description":  "Desk Organizer",
+                              "UnitPrice":  18.4,
+                              "LineTotal":  40.48
+                          }
+                      ],
+        "VoidReason":  null,
+        "Status":  0,
+        "ClerkStaffId":  10,
+        "ClosedAt":  null,
+        "TotalAmount":  40.48,
+        "CreatedAt":  "2026-09-10T17:39:00Z",
+        "CounterTerminalId":  2
+    },
+    {
+        "TaxAmount":  3.78,
+        "Id":  10,
+        "BranchCode":  "BR-005",
+        "PaymentMethod":  1,
+        "Subtotal":  37.8,
+        "LineItems":  [
+                          {
+                              "TaxAmount":  3.78,
+                              "Id":  10,
+                              "ItemCode":  "STN-004",
+                              "LineType":  0,
+                              "TransactionId":  10,
+                              "Quantity":  3,
+                              "Description":  "Signature Pen Pack",
+                              "UnitPrice":  12.6,
+                              "LineTotal":  41.58
+                          }
+                      ],
+        "VoidReason":  null,
+        "Status":  1,
+        "ClerkStaffId":  11,
+        "ClosedAt":  "2026-09-11T10:10:00Z",
+        "TotalAmount":  41.58,
+        "CreatedAt":  "2026-09-11T08:50:00Z",
+        "CounterTerminalId":  1
+    },
+    {
+        "TaxAmount":  1.56,
+        "Id":  11,
+        "BranchCode":  "BR-001",
+        "PaymentMethod":  2,
+        "Subtotal":  15.6,
+        "LineItems":  [
+                          {
+                              "TaxAmount":  1.56,
+                              "Id":  11,
+                              "ItemCode":  "STN-005",
+                              "LineType":  1,
+                              "TransactionId":  11,
+                              "Quantity":  4,
+                              "Description":  "Sticky Notes Bundle",
+                              "UnitPrice":  3.9,
+                              "LineTotal":  17.16
+                          }
+                      ],
+        "VoidReason":  null,
+        "Status":  2,
+        "ClerkStaffId":  12,
+        "ClosedAt":  null,
+        "TotalAmount":  17.16,
+        "CreatedAt":  "2026-09-12T09:01:00Z",
+        "CounterTerminalId":  2
+    },
+    {
+        "TaxAmount":  0.61,
+        "Id":  12,
+        "BranchCode":  "BR-002",
+        "PaymentMethod":  3,
+        "Subtotal":  6.1,
+        "LineItems":  [
+                          {
+                              "TaxAmount":  0.61,
+                              "Id":  12,
+                              "ItemCode":  "STN-006",
+                              "LineType":  0,
+                              "TransactionId":  12,
+                              "Quantity":  1,
+                              "Description":  "Document Pouch",
+                              "UnitPrice":  6.1,
+                              "LineTotal":  6.71
+                          }
+                      ],
+        "VoidReason":  null,
+        "Status":  3,
+        "ClerkStaffId":  13,
+        "ClosedAt":  "2026-09-13T12:36:00Z",
+        "TotalAmount":  6.71,
+        "CreatedAt":  "2026-09-13T10:12:00Z",
+        "CounterTerminalId":  1
+    },
+    {
+        "TaxAmount":  2.85,
+        "Id":  13,
+        "BranchCode":  "BR-003",
+        "PaymentMethod":  0,
+        "Subtotal":  28.5,
+        "LineItems":  [
+                          {
+                              "TaxAmount":  2.85,
+                              "Id":  13,
+                              "ItemCode":  "OFF-001",
+                              "LineType":  1,
+                              "TransactionId":  13,
+                              "Quantity":  2,
+                              "Description":  "A4 Copy Paper Ream",
+                              "UnitPrice":  14.25,
+                              "LineTotal":  31.35
+                          }
+                      ],
+        "VoidReason":  null,
+        "Status":  0,
+        "ClerkStaffId":  14,
+        "ClosedAt":  null,
+        "TotalAmount":  31.35,
+        "CreatedAt":  "2026-09-14T11:23:00Z",
+        "CounterTerminalId":  2
+    },
+    {
+        "TaxAmount":  10.2,
+        "Id":  14,
+        "BranchCode":  "BR-004",
+        "PaymentMethod":  1,
+        "Subtotal":  102,
+        "LineItems":  [
+                          {
+                              "TaxAmount":  10.2,
+                              "Id":  14,
+                              "ItemCode":  "OFF-002",
+                              "LineType":  0,
+                              "TransactionId":  14,
+                              "Quantity":  3,
+                              "Description":  "Printing Ink Cartridge",
+                              "UnitPrice":  34,
+                              "LineTotal":  112.2
+                          }
+                      ],
+        "VoidReason":  "Duplicate receipt",
+        "Status":  1,
+        "ClerkStaffId":  15,
+        "ClosedAt":  "2026-09-15T14:02:00Z",
+        "TotalAmount":  112.2,
+        "CreatedAt":  "2026-09-15T12:34:00Z",
+        "CounterTerminalId":  1
+    },
+    {
+        "TaxAmount":  17,
+        "Id":  15,
+        "BranchCode":  "BR-005",
+        "PaymentMethod":  2,
+        "Subtotal":  170,
+        "LineItems":  [
+                          {
+                              "TaxAmount":  17,
+                              "Id":  15,
+                              "ItemCode":  "OFF-003",
+                              "LineType":  1,
+                              "TransactionId":  15,
+                              "Quantity":  4,
+                              "Description":  "Monochrome Toner",
+                              "UnitPrice":  42.5,
+                              "LineTotal":  187
+                          }
+                      ],
+        "VoidReason":  null,
+        "Status":  2,
+        "ClerkStaffId":  16,
+        "ClosedAt":  null,
+        "TotalAmount":  187,
+        "CreatedAt":  "2026-09-16T13:45:00Z",
+        "CounterTerminalId":  2
+    },
+    {
+        "TaxAmount":  2.78,
+        "Id":  16,
+        "BranchCode":  "BR-001",
+        "PaymentMethod":  3,
+        "Subtotal":  27.8,
+        "LineItems":  [
+                          {
+                              "TaxAmount":  2.78,
+                              "Id":  16,
+                              "ItemCode":  "OFF-004",
+                              "LineType":  0,
+                              "TransactionId":  16,
+                              "Quantity":  1,
+                              "Description":  "Bulletin Board Kit",
+                              "UnitPrice":  27.8,
+                              "LineTotal":  30.58
+                          }
+                      ],
+        "VoidReason":  null,
+        "Status":  3,
+        "ClerkStaffId":  17,
+        "ClosedAt":  "2026-09-17T16:28:00Z",
+        "TotalAmount":  30.58,
+        "CreatedAt":  "2026-09-17T14:56:00Z",
+        "CounterTerminalId":  1
+    },
+    {
+        "TaxAmount":  4.4,
+        "Id":  17,
+        "BranchCode":  "BR-002",
+        "PaymentMethod":  0,
+        "Subtotal":  44,
+        "LineItems":  [
+                          {
+                              "TaxAmount":  4.4,
+                              "Id":  17,
+                              "ItemCode":  "OFF-005",
+                              "LineType":  1,
+                              "TransactionId":  17,
+                              "Quantity":  2,
+                              "Description":  "Executive Desk Pad",
+                              "UnitPrice":  22,
+                              "LineTotal":  48.4
+                          }
+                      ],
+        "VoidReason":  null,
+        "Status":  0,
+        "ClerkStaffId":  18,
+        "ClosedAt":  null,
+        "TotalAmount":  48.4,
+        "CreatedAt":  "2026-09-18T15:07:00Z",
+        "CounterTerminalId":  2
+    },
+    {
+        "TaxAmount":  3.45,
+        "Id":  18,
+        "BranchCode":  "BR-003",
+        "PaymentMethod":  1,
+        "Subtotal":  34.5,
+        "LineItems":  [
+                          {
+                              "TaxAmount":  3.45,
+                              "Id":  18,
+                              "ItemCode":  "OFF-006",
+                              "LineType":  0,
+                              "TransactionId":  18,
+                              "Quantity":  3,
+                              "Description":  "Label Printer Tape",
+                              "UnitPrice":  11.5,
+                              "LineTotal":  37.95
+                          }
+                      ],
+        "VoidReason":  null,
+        "Status":  1,
+        "ClerkStaffId":  19,
+        "ClosedAt":  "2026-09-19T09:54:00Z",
+        "TotalAmount":  37.95,
+        "CreatedAt":  "2026-09-19T16:18:00Z",
+        "CounterTerminalId":  1
+    },
+    {
+        "TaxAmount":  2.74,
+        "Id":  19,
+        "BranchCode":  "BR-004",
+        "PaymentMethod":  2,
+        "Subtotal":  27.4,
+        "LineItems":  [
+                          {
+                              "TaxAmount":  2.74,
+                              "Id":  19,
+                              "ItemCode":  "PKG-007",
+                              "LineType":  1,
+                              "TransactionId":  19,
+                              "Quantity":  4,
+                              "Description":  "Glassine Mailer",
+                              "UnitPrice":  6.85,
+                              "LineTotal":  30.14
+                          }
+                      ],
+        "VoidReason":  null,
+        "Status":  2,
+        "ClerkStaffId":  20,
+        "ClosedAt":  null,
+        "TotalAmount":  30.14,
+        "CreatedAt":  "2026-09-20T17:29:00Z",
+        "CounterTerminalId":  2
+    },
+    {
+        "TaxAmount":  0.81,
+        "Id":  20,
+        "BranchCode":  "BR-005",
+        "PaymentMethod":  3,
+        "Subtotal":  8.1,
+        "LineItems":  [
+                          {
+                              "TaxAmount":  0.81,
+                              "Id":  20,
+                              "ItemCode":  "PKG-008",
+                              "LineType":  0,
+                              "TransactionId":  20,
+                              "Quantity":  1,
+                              "Description":  "Document Envelopes",
+                              "UnitPrice":  8.1,
+                              "LineTotal":  8.91
+                          }
+                      ],
+        "VoidReason":  null,
+        "Status":  3,
+        "ClerkStaffId":  1,
+        "ClosedAt":  "2026-09-21T11:20:00Z",
+        "TotalAmount":  8.91,
+        "CreatedAt":  "2026-09-21T08:40:00Z",
+        "CounterTerminalId":  1
+    },
+    {
+        "TaxAmount":  2.64,
+        "Id":  21,
+        "BranchCode":  "BR-001",
+        "PaymentMethod":  0,
+        "Subtotal":  26.4,
+        "LineItems":  [
+                          {
+                              "TaxAmount":  2.64,
+                              "Id":  21,
+                              "ItemCode":  "STN-007",
+                              "LineType":  1,
+                              "TransactionId":  21,
+                              "Quantity":  2,
+                              "Description":  "Customer Receipt Book",
+                              "UnitPrice":  13.2,
+                              "LineTotal":  29.04
+                          }
+                      ],
+        "VoidReason":  "Duplicate receipt",
+        "Status":  0,
+        "ClerkStaffId":  2,
+        "ClosedAt":  null,
+        "TotalAmount":  29.04,
+        "CreatedAt":  "2026-09-22T09:51:00Z",
+        "CounterTerminalId":  2
+    },
+    {
+        "TaxAmount":  5.03,
+        "Id":  22,
+        "BranchCode":  "BR-002",
+        "PaymentMethod":  1,
+        "Subtotal":  50.25,
+        "LineItems":  [
+                          {
+                              "TaxAmount":  5.03,
+                              "Id":  22,
+                              "ItemCode":  "STN-008",
+                              "LineType":  0,
+                              "TransactionId":  22,
+                              "Quantity":  3,
+                              "Description":  "Transaction Register Ledger",
+                              "UnitPrice":  16.75,
+                              "LineTotal":  55.28
+                          }
+                      ],
+        "VoidReason":  null,
+        "Status":  1,
+        "ClerkStaffId":  3,
+        "ClosedAt":  "2026-09-23T13:46:00Z",
+        "TotalAmount":  55.28,
+        "CreatedAt":  "2026-09-23T10:02:00Z",
+        "CounterTerminalId":  1
+    },
+    {
+        "TaxAmount":  7.96,
+        "Id":  23,
+        "BranchCode":  "BR-003",
+        "PaymentMethod":  2,
+        "Subtotal":  79.6,
+        "LineItems":  [
+                          {
+                              "TaxAmount":  7.96,
+                              "Id":  23,
+                              "ItemCode":  "OFF-007",
+                              "LineType":  1,
+                              "TransactionId":  23,
+                              "Quantity":  4,
+                              "Description":  "Safety File Box",
+                              "UnitPrice":  19.9,
+                              "LineTotal":  87.56
+                          }
+                      ],
+        "VoidReason":  null,
+        "Status":  2,
+        "ClerkStaffId":  4,
+        "ClosedAt":  null,
+        "TotalAmount":  87.56,
+        "CreatedAt":  "2026-09-24T11:13:00Z",
+        "CounterTerminalId":  2
+    },
+    {
+        "TaxAmount":  3,
+        "Id":  24,
+        "BranchCode":  "BR-004",
+        "PaymentMethod":  3,
+        "Subtotal":  29.95,
+        "LineItems":  [
+                          {
+                              "TaxAmount":  3,
+                              "Id":  24,
+                              "ItemCode":  "OFF-008",
+                              "LineType":  0,
+                              "TransactionId":  24,
+                              "Quantity":  1,
+                              "Description":  "Office Chair Mat",
+                              "UnitPrice":  29.95,
+                              "LineTotal":  32.95
+                          }
+                      ],
+        "VoidReason":  null,
+        "Status":  3,
+        "ClerkStaffId":  5,
+        "ClosedAt":  "2026-09-01T15:12:00Z",
+        "TotalAmount":  32.95,
+        "CreatedAt":  "2026-09-01T12:24:00Z",
+        "CounterTerminalId":  1
+    },
+    {
+        "TaxAmount":  3.72,
+        "Id":  25,
+        "BranchCode":  "BR-005",
+        "PaymentMethod":  0,
+        "Subtotal":  37.2,
+        "LineItems":  [
+                          {
+                              "TaxAmount":  3.72,
+                              "Id":  25,
+                              "ItemCode":  "PKG-009",
+                              "LineType":  1,
+                              "TransactionId":  25,
+                              "Quantity":  2,
+                              "Description":  "Priority Shipping Kit",
+                              "UnitPrice":  18.6,
+                              "LineTotal":  40.92
+                          }
+                      ],
+        "VoidReason":  null,
+        "Status":  0,
+        "ClerkStaffId":  6,
+        "ClosedAt":  null,
+        "TotalAmount":  40.92,
+        "CreatedAt":  "2026-09-02T13:35:00Z",
+        "CounterTerminalId":  2
+    },
+    {
+        "TaxAmount":  1.25,
+        "Id":  26,
+        "BranchCode":  "BR-001",
+        "PaymentMethod":  1,
+        "Subtotal":  12.45,
+        "LineItems":  [
+                          {
+                              "TaxAmount":  1.25,
+                              "Id":  26,
+                              "ItemCode":  "PKG-010",
+                              "LineType":  0,
+                              "TransactionId":  26,
+                              "Quantity":  3,
+                              "Description":  "Cash Handling Envelope",
+                              "UnitPrice":  4.15,
+                              "LineTotal":  13.7
+                          }
+                      ],
+        "VoidReason":  null,
+        "Status":  1,
+        "ClerkStaffId":  7,
+        "ClosedAt":  "2026-09-03T17:38:00Z",
+        "TotalAmount":  13.7,
+        "CreatedAt":  "2026-09-03T14:46:00Z",
+        "CounterTerminalId":  1
+    },
+    {
+        "TaxAmount":  3.06,
+        "Id":  27,
+        "BranchCode":  "BR-002",
+        "PaymentMethod":  2,
+        "Subtotal":  30.6,
+        "LineItems":  [
+                          {
+                              "TaxAmount":  3.06,
+                              "Id":  27,
+                              "ItemCode":  "STN-009",
+                              "LineType":  1,
+                              "TransactionId":  27,
+                              "Quantity":  4,
+                              "Description":  "Barcode Label Roll",
+                              "UnitPrice":  7.65,
+                              "LineTotal":  33.66
+                          }
+                      ],
+        "VoidReason":  null,
+        "Status":  2,
+        "ClerkStaffId":  8,
+        "ClosedAt":  null,
+        "TotalAmount":  33.66,
+        "CreatedAt":  "2026-09-04T15:57:00Z",
+        "CounterTerminalId":  2
+    },
+    {
+        "TaxAmount":  3.95,
+        "Id":  28,
+        "BranchCode":  "BR-003",
+        "PaymentMethod":  3,
+        "Subtotal":  39.5,
+        "LineItems":  [
+                          {
+                              "TaxAmount":  3.95,
+                              "Id":  28,
+                              "ItemCode":  "OFF-009",
+                              "LineType":  0,
+                              "TransactionId":  28,
+                              "Quantity":  1,
+                              "Description":  "Desk Lamp",
+                              "UnitPrice":  39.5,
+                              "LineTotal":  43.45
+                          }
+                      ],
+        "VoidReason":  "Duplicate receipt",
+        "Status":  3,
+        "ClerkStaffId":  9,
+        "ClosedAt":  "2026-09-05T10:04:00Z",
+        "TotalAmount":  43.45,
+        "CreatedAt":  "2026-09-05T16:08:00Z",
+        "CounterTerminalId":  1
+    },
+    {
+        "TaxAmount":  17.6,
+        "Id":  29,
+        "BranchCode":  "BR-004",
+        "PaymentMethod":  0,
+        "Subtotal":  176,
+        "LineItems":  [
+                          {
+                              "TaxAmount":  17.6,
+                              "Id":  29,
+                              "ItemCode":  "OFF-010",
+                              "LineType":  1,
+                              "TransactionId":  29,
+                              "Quantity":  2,
+                              "Description":  "Portable Scanner",
+                              "UnitPrice":  88,
+                              "LineTotal":  193.6
+                          }
+                      ],
+        "VoidReason":  null,
+        "Status":  0,
+        "ClerkStaffId":  10,
+        "ClosedAt":  null,
+        "TotalAmount":  193.6,
+        "CreatedAt":  "2026-09-06T17:19:00Z",
+        "CounterTerminalId":  2
+    },
+    {
+        "TaxAmount":  6.39,
+        "Id":  30,
+        "BranchCode":  "BR-005",
+        "PaymentMethod":  1,
+        "Subtotal":  63.9,
+        "LineItems":  [
+                          {
+                              "TaxAmount":  6.39,
+                              "Id":  30,
+                              "ItemCode":  "STN-010",
+                              "LineType":  0,
+                              "TransactionId":  30,
+                              "Quantity":  3,
+                              "Description":  "Secure Archive Box",
+                              "UnitPrice":  21.3,
+                              "LineTotal":  70.29
+                          }
+                      ],
+        "VoidReason":  null,
+        "Status":  1,
+        "ClerkStaffId":  11,
+        "ClosedAt":  "2026-09-07T12:30:00Z",
+        "TotalAmount":  70.29,
+        "CreatedAt":  "2026-09-07T08:30:00Z",
+        "CounterTerminalId":  1
+    },
+    {
+        "TaxAmount":  2.2,
+        "Id":  31,
+        "BranchCode":  "BR-001",
+        "PaymentMethod":  2,
+        "Subtotal":  22,
+        "LineItems":  [
+                          {
+                              "TaxAmount":  2.2,
+                              "Id":  31,
+                              "ItemCode":  "PKG-001",
+                              "LineType":  1,
+                              "TransactionId":  31,
+                              "Quantity":  4,
+                              "Description":  "Express Mailer Pack",
+                              "UnitPrice":  5.5,
+                              "LineTotal":  24.2
+                          }
+                      ],
+        "VoidReason":  null,
+        "Status":  2,
+        "ClerkStaffId":  12,
+        "ClosedAt":  null,
+        "TotalAmount":  24.2,
+        "CreatedAt":  "2026-09-08T09:41:00Z",
+        "CounterTerminalId":  2
+    },
+    {
+        "TaxAmount":  0.82,
+        "Id":  32,
+        "BranchCode":  "BR-002",
+        "PaymentMethod":  3,
+        "Subtotal":  8.25,
+        "LineItems":  [
+                          {
+                              "TaxAmount":  0.82,
+                              "Id":  32,
+                              "ItemCode":  "PKG-002",
+                              "LineType":  0,
+                              "TransactionId":  32,
+                              "Quantity":  1,
+                              "Description":  "Priority Box Small",
+                              "UnitPrice":  8.25,
+                              "LineTotal":  9.07
+                          }
+                      ],
+        "VoidReason":  null,
+        "Status":  3,
+        "ClerkStaffId":  13,
+        "ClosedAt":  "2026-09-09T14:56:00Z",
+        "TotalAmount":  9.07,
+        "CreatedAt":  "2026-09-09T10:52:00Z",
+        "CounterTerminalId":  1
+    },
+    {
+        "TaxAmount":  2.35,
+        "Id":  33,
+        "BranchCode":  "BR-003",
+        "PaymentMethod":  0,
+        "Subtotal":  23.5,
+        "LineItems":  [
+                          {
+                              "TaxAmount":  2.35,
+                              "Id":  33,
+                              "ItemCode":  "PKG-003",
+                              "LineType":  1,
+                              "TransactionId":  33,
+                              "Quantity":  2,
+                              "Description":  "Priority Box Medium",
+                              "UnitPrice":  11.75,
+                              "LineTotal":  25.85
+                          }
+                      ],
+        "VoidReason":  null,
+        "Status":  0,
+        "ClerkStaffId":  14,
+        "ClosedAt":  null,
+        "TotalAmount":  25.85,
+        "CreatedAt":  "2026-09-10T11:03:00Z",
+        "CounterTerminalId":  2
+    },
+    {
+        "TaxAmount":  4.77,
+        "Id":  34,
+        "BranchCode":  "BR-004",
+        "PaymentMethod":  1,
+        "Subtotal":  47.7,
+        "LineItems":  [
+                          {
+                              "TaxAmount":  4.77,
+                              "Id":  34,
+                              "ItemCode":  "PKG-004",
+                              "LineType":  0,
+                              "TransactionId":  34,
+                              "Quantity":  3,
+                              "Description":  "Priority Box Large",
+                              "UnitPrice":  15.9,
+                              "LineTotal":  52.47
+                          }
+                      ],
+        "VoidReason":  null,
+        "Status":  1,
+        "ClerkStaffId":  15,
+        "ClosedAt":  "2026-09-11T16:22:00Z",
+        "TotalAmount":  52.47,
+        "CreatedAt":  "2026-09-11T12:14:00Z",
+        "CounterTerminalId":  1
+    },
+    {
+        "TaxAmount":  2.98,
+        "Id":  35,
+        "BranchCode":  "BR-005",
+        "PaymentMethod":  2,
+        "Subtotal":  29.8,
+        "LineItems":  [
+                          {
+                              "TaxAmount":  2.98,
+                              "Id":  35,
+                              "ItemCode":  "PKG-005",
+                              "LineType":  1,
+                              "TransactionId":  35,
+                              "Quantity":  4,
+                              "Description":  "Bubble Wrap Roll",
+                              "UnitPrice":  7.45,
+                              "LineTotal":  32.78
+                          }
+                      ],
+        "VoidReason":  "Duplicate receipt",
+        "Status":  2,
+        "ClerkStaffId":  16,
+        "ClosedAt":  null,
+        "TotalAmount":  32.78,
+        "CreatedAt":  "2026-09-12T13:25:00Z",
+        "CounterTerminalId":  2
+    },
+    {
+        "TaxAmount":  0.63,
+        "Id":  36,
+        "BranchCode":  "BR-001",
+        "PaymentMethod":  3,
+        "Subtotal":  6.3,
+        "LineItems":  [
+                          {
+                              "TaxAmount":  0.63,
+                              "Id":  36,
+                              "ItemCode":  "PKG-006",
+                              "LineType":  0,
+                              "TransactionId":  36,
+                              "Quantity":  1,
+                              "Description":  "Packing Tape 50m",
+                              "UnitPrice":  6.3,
+                              "LineTotal":  6.93
+                          }
+                      ],
+        "VoidReason":  null,
+        "Status":  3,
+        "ClerkStaffId":  17,
+        "ClosedAt":  "2026-09-13T09:48:00Z",
+        "TotalAmount":  6.93,
+        "CreatedAt":  "2026-09-13T14:36:00Z",
+        "CounterTerminalId":  1
+    },
+    {
+        "TaxAmount":  0.96,
+        "Id":  37,
+        "BranchCode":  "BR-002",
+        "PaymentMethod":  0,
+        "Subtotal":  9.6,
+        "LineItems":  [
+                          {
+                              "TaxAmount":  0.96,
+                              "Id":  37,
+                              "ItemCode":  "STN-001",
+                              "LineType":  1,
+                              "TransactionId":  37,
+                              "Quantity":  2,
+                              "Description":  "Ledger Notebook A4",
+                              "UnitPrice":  4.8,
+                              "LineTotal":  10.56
+                          }
+                      ],
+        "VoidReason":  null,
+        "Status":  0,
+        "ClerkStaffId":  18,
+        "ClosedAt":  null,
+        "TotalAmount":  10.56,
+        "CreatedAt":  "2026-09-14T15:47:00Z",
+        "CounterTerminalId":  2
+    },
+    {
+        "TaxAmount":  2.76,
+        "Id":  38,
+        "BranchCode":  "BR-003",
+        "PaymentMethod":  1,
+        "Subtotal":  27.6,
+        "LineItems":  [
+                          {
+                              "TaxAmount":  2.76,
+                              "Id":  38,
+                              "ItemCode":  "STN-002",
+                              "LineType":  0,
+                              "TransactionId":  38,
+                              "Quantity":  3,
+                              "Description":  "Business Folder Set",
+                              "UnitPrice":  9.2,
+                              "LineTotal":  30.36
+                          }
+                      ],
+        "VoidReason":  null,
+        "Status":  1,
+        "ClerkStaffId":  19,
+        "ClosedAt":  "2026-09-15T11:14:00Z",
+        "TotalAmount":  30.36,
+        "CreatedAt":  "2026-09-15T16:58:00Z",
+        "CounterTerminalId":  1
+    },
+    {
+        "TaxAmount":  7.36,
+        "Id":  39,
+        "BranchCode":  "BR-004",
+        "PaymentMethod":  2,
+        "Subtotal":  73.6,
+        "LineItems":  [
+                          {
+                              "TaxAmount":  7.36,
+                              "Id":  39,
+                              "ItemCode":  "STN-003",
+                              "LineType":  1,
+                              "TransactionId":  39,
+                              "Quantity":  4,
+                              "Description":  "Desk Organizer",
+                              "UnitPrice":  18.4,
+                              "LineTotal":  80.96
+                          }
+                      ],
+        "VoidReason":  null,
+        "Status":  2,
+        "ClerkStaffId":  20,
+        "ClosedAt":  null,
+        "TotalAmount":  80.96,
+        "CreatedAt":  "2026-09-16T17:09:00Z",
+        "CounterTerminalId":  2
+    },
+    {
+        "TaxAmount":  1.26,
+        "Id":  40,
+        "BranchCode":  "BR-005",
+        "PaymentMethod":  3,
+        "Subtotal":  12.6,
+        "LineItems":  [
+                          {
+                              "TaxAmount":  1.26,
+                              "Id":  40,
+                              "ItemCode":  "STN-004",
+                              "LineType":  0,
+                              "TransactionId":  40,
+                              "Quantity":  1,
+                              "Description":  "Signature Pen Pack",
+                              "UnitPrice":  12.6,
+                              "LineTotal":  13.86
+                          }
+                      ],
+        "VoidReason":  null,
+        "Status":  3,
+        "ClerkStaffId":  1,
+        "ClosedAt":  "2026-09-17T13:40:00Z",
+        "TotalAmount":  13.86,
+        "CreatedAt":  "2026-09-17T08:20:00Z",
+        "CounterTerminalId":  1
+    }
+]

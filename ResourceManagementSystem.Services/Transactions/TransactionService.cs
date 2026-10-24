@@ -21,6 +21,8 @@ public class TransactionService : ITransactionService
         _staffService = staffService;
     }
 
+    public IEnumerable<TransactionEntity> GetAllTransactions() => _transactionRepository.GetAll();
+
     public TransactionEntity CreateTransaction(TransactionEntity transaction)
     {
         if (transaction == null) throw new ArgumentNullException(nameof(transaction));

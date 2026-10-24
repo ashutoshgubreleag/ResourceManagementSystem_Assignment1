@@ -1,0 +1,33 @@
+@model ResourceManagementSystem.Database.Models.TransactionEntity
+@{
+    ViewData["Title"] = "Create transaction";
+}
+
+<h2>Create counter transaction</h2>
+
+<form asp-action="Create" method="post">
+    <div asp-validation-summary="All" class="text-danger"></div>
+
+    <div class="mb-3">
+        <label asp-for="BranchCode" class="form-label">Branch code</label>
+        <input asp-for="BranchCode" class="form-control" />
+    </div>
+
+    <div class="mb-3">
+        <label asp-for="CounterTerminalId" class="form-label">Counter terminal</label>
+        <input asp-for="CounterTerminalId" class="form-control" type="number" />
+    </div>
+
+    <div class="mb-3">
+        <label asp-for="ClerkStaffId" class="form-label">Clerk staff id</label>
+        <input asp-for="ClerkStaffId" class="form-control" type="number" />
+    </div>
+
+    <div class="mb-3">
+        <label asp-for="PaymentMethod" class="form-label"></label>
+        <select asp-for="PaymentMethod" class="form-select" asp-items="Html.GetEnumSelectList<ResourceManagementSystem.Database.Models.PaymentMethod>()"></select>
+    </div>
+
+    <button type="submit" class="btn btn-primary">Create transaction</button>
+    <a asp-action="Index" class="btn btn-secondary">Back</a>
+</form>

@@ -35,10 +35,12 @@ public class InventoryService : IInventoryService
         return _stockRepository.Add(stockItem);
     }
 
+    public IEnumerable<BranchStockEntity> GetAllStock() => _stockRepository.GetAll();
+
     public IEnumerable<BranchStockEntity> GetStockForBranch(string branchCode)
     {
         if (string.IsNullOrWhiteSpace(branchCode)) return Enumerable.Empty<BranchStockEntity>();
-        return _stockRepository.GetAll()
+        return GetAllStock()
             .Where(item => string.Equals(item.BranchCode, branchCode, StringComparison.OrdinalIgnoreCase));
     }
 

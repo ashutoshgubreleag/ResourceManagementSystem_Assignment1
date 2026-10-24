@@ -1,310 +1,387 @@
-# Resource Management System Design
+# ApexPost Design
 
 ## Architecture overview
 
-The application is a .NET 10 console application. `Program.cs` composes the application using dependency injection, the application services coordinate use cases, and generic repositories provide interchangeable JSON or EF Core persistence.
+This solution is designed as an MVC-first ApexPost branch operations platform. The active application is `ResourceManagementSystem.MVC`, while the legacy `ResourceManagementSystem` project remains a reference-only implementation and is intentionally not the application entry point.
 
 ```mermaid
 flowchart TD
-	User[Console user] --> Program[Program.cs\nConsole menu]
-	Program --> EmployeeService[EmployeeService]
-	Program --> ProjectService[ProjectService]
-	Program --> ReportService[ReportService]
+	User[Staff member] --> MVC[ResourceManagementSystem.MVC]
+	MVC --> Controllers[Controllers\nAccount, Branch, Catalog, Shipping, Transactions]
+	Controllers --> Services[Services\nBranch, Staff, Inventory, Shipping, Money Orders, Transactions, Reporting]
+	Services --> Repos[Repositories\nBaseJsonRepository<TEntity>]
+	Repos --> Data[(JSON seed data\nResourceManagementSystem.Database\JSONs)]
 
-	EmployeeService --> EmployeeRepo[IBaseEntityRepository<Employee>]
-	ProjectService --> ProjectRepo[IBaseEntityRepository<ClientProject>]
-	ProjectService --> AllocationRepo[IBaseEntityRepository<ProjectAllocation>]
-	ProjectService --> Notification[IAllocationNotificationService]
-	ReportService --> EmployeeRepo
-	ReportService --> ProjectRepo
-	ReportService --> AllocationRepo
-
-	EmployeeRepo --> JsonRepo[BaseJsonRepository<TEntity>]
-	ProjectRepo --> JsonRepo
-	AllocationRepo --> JsonRepo
-	EmployeeRepo -. switch registration .-> EfRepo[BaseEntityRepository<TEntity>]
-	ProjectRepo -. switch registration .-> EfRepo
-	AllocationRepo -. switch registration .-> EfRepo
-
-	JsonRepo --> JsonFiles[(JSON files)]
-	EfRepo --> DbContext[ApplicationDbContext]
-	DbContext --> SQLite[(SQLite database)]
-	Notification --> Simulated[Simulated notification\nconsole output]
+	Services --> Domain[Database entities + value objects]
+	Domain --> Models[ResourceManagementSystem.Models]
+	MVC --> Filters[Validation / Performance / Audit filters]
+	MVC --> Middleware[Correlation ID / Logging / IP restriction / Security headers / API key validation]
+	MVC --> Views[MVC Razor views]
+	Filters --> Audit[(audit-log.json / AUDIT-SAMPLE.json)]
 ```
 
-The repository implementation is selected in `Program.cs`. Services depend only on `IBaseEntityRepository<TEntity>`, so switching between JSON and EF Core does not require service changes.
-
-## Domain and class diagram
+## Domain model diagram
 
 ```mermaid
 classDiagram
-	class Employee {
+	class BranchEntity {
+		+int Id
+		+string BranchCode
+		+string Name
+		+string Region
+		+string OpeningHours
+		+BranchStatus Status
+		+List~CounterTerminalEntity~ Counters
+	}
+
+	class StaffEntity {
 		+int Id
 		+string Name
 		+string Email
-		+string Position
-		+string Department
-		+decimal Salary
-		+EmployeeStatus Status
-		+List~EmployeeSkill~ Skills
+		+StaffRole Role
+		+string HomeBranchCode
+		+bool IsActive
 	}
 
-	class EmployeeSkill {
-		+string Name
-		+int ProficiencyLevel
-	}
-
-	class ClientProject {
+	class ProductEntity {
 		+int Id
+		+string Sku
 		+string Name
-		+string Client
-		+DateTime StartDate
-		+DateTime EndDate
-		+ProjectStatus Status
-		+List~ProjectSkill~ RequiredSkills
+		+ProductCategory Category
+		+decimal UnitPrice
+		+TaxCategory TaxCategory
+		+bool IsActive
 	}
 
-	class ProjectSkill {
-		+string Name
-		+int MinimumProficiencyLevel
-	}
-
-	class ProjectAllocation {
+	class BranchStockEntity {
 		+int Id
-		+int ProjectId
-		+int EmployeeId
-		+DateTime StartDate
-		+DateTime EndDate
-		+int AllocationPercentage
+		+string BranchCode
+		+string Sku
+		+int QuantityOnHand
+		+int ReorderThreshold
+		+DateTime UpdatedAt
 	}
 
-	class IBaseEntityRepository~T~ {
-		<<interface>>
-		+T Add(T entity)
-		+bool Update(T entity)
-		+T GetById(object id)
-		+IEnumerable~T~ GetAll()
-		+bool Delete(object id)
+	class ShippingOrderEntity {
+		+int Id
+		+int TransactionId
+		+ShippingType ShippingType
+		+decimal WeightKg
+		+string Dimensions
+		+DestinationZone DestinationZone
+		+ShippingServiceLevel ServiceLevel
+		+decimal CalculatedPrice
+		+string Status
+		+DateTime CreatedAt
 	}
 
-	class BaseJsonRepository~T~
-	class BaseEntityRepository~T~
-	class EmployeeService
-	class ProjectService
-	class ReportService
+	class MoneyOrderEntity {
+		+int Id
+		+string BranchCode
+		+decimal Amount
+		+string Sender
+		+string Recipient
+		+decimal Fee
+		+int? IdentityVerificationId
+		+MoneyOrderStatus Status
+		+DateTime CreatedAt
+	}
 
-	Employee "1" *-- "0..*" EmployeeSkill
-	ClientProject "1" *-- "1..*" ProjectSkill
-	Employee "1" --> "0..*" ProjectAllocation : employeeId
-	ClientProject "1" --> "0..*" ProjectAllocation : projectId
-	BaseJsonRepository~T~ ..|> IBaseEntityRepository~T~
-	BaseEntityRepository~T~ ..|> IBaseEntityRepository~T~
-	EmployeeService --> IBaseEntityRepository~Employee~
-	ProjectService --> IBaseEntityRepository~Employee~
-	ProjectService --> IBaseEntityRepository~ClientProject~
-	ProjectService --> IBaseEntityRepository~ProjectAllocation~
-	ReportService --> IBaseEntityRepository~Employee~
-	ReportService --> IBaseEntityRepository~ClientProject~
-	ReportService --> IBaseEntityRepository~ProjectAllocation~
+	class TransactionEntity {
+		+int Id
+		+string BranchCode
+		+int CounterTerminalId
+		+int ClerkStaffId
+		+List~TransactionLineItemEntity~ LineItems
+		+PaymentMethod PaymentMethod
+		+TransactionStatus Status
+		+decimal Subtotal
+		+decimal TaxAmount
+		+decimal TotalAmount
+		+string? VoidReason
+		+DateTime CreatedAt
+		+DateTime? ClosedAt
+	}
+
+	class TransactionLineItemEntity {
+		+int Id
+		+int TransactionId
+		+TransactionLineType LineType
+		+string ItemCode
+		+string Description
+		+int Quantity
+		+decimal UnitPrice
+		+decimal TaxAmount
+		+decimal LineTotal
+	}
+
+	BranchEntity --> StaffEntity
+	BranchEntity --> CounterTerminalEntity
+	BranchEntity --> BranchStockEntity
+	ProductEntity --> BranchStockEntity
+	TransactionEntity --> TransactionLineItemEntity
+	ShippingOrderEntity --> TransactionEntity
+	MoneyOrderEntity --> IdentityVerificationEntity
 ```
 
-`ProjectAllocation` uses foreign-key IDs rather than direct object references so the same model can be stored by both the JSON repository and EF Core repository. Employee skills and project required skills are collections with proficiency values from 1 through 5.
+## Middleware pipeline
 
-## Architecture Decision Records
+```mermaid
+flowchart LR
+	A[Request] --> B[CorrelationIdMiddleware]
+	B --> C[RequestLoggingMiddleware]
+	C --> D[ExceptionHandler]
+	D --> E[HSTS / HTTPS redirection]
+	E --> F[IpRestrictionMiddleware]
+	F --> G[Security headers]
+	G --> H[MaintenanceModeMiddleware]
+	H --> I[Routing]
+	I --> J[Authentication]
+	J --> K[Authorization]
+	K --> L[Rate limiting]
+	L --> M[ApiKeyValidationMiddleware]
+	M --> N[Controller action]
+	N --> O[Response]
+```
 
-### ADR-001: Use a layered console application
+## Filter vs middleware matrix
 
-**Context**
+| Concern | Type | Purpose | Example |
+| --- | --- | --- | --- |
+| Request correlation | Middleware | Adds a per-request ID to logs and response headers | `CorrelationIdMiddleware` |
+| Request logging | Middleware | Records method, path, IP, and timing for observability | `RequestLoggingMiddleware` |
+| Security headers | Middleware | Adds CSP, X-Frame-Options, X-Content-Type-Options | inline response pipeline |
+| IP restrictions | Middleware | Blocks unauthorized addresses to admin/integration routes | `IpRestrictionMiddleware` |
+| Maintenance mode | Middleware | Temporarily prevents usage during scheduled downtime | `MaintenanceModeMiddleware` |
+| API key validation | Middleware | Validates `x-api-key` for protected integration endpoints | `ApiKeyValidationMiddleware` |
+| Audit capture | Action filter | Records controller/action metadata and status for traceability | `AuditActionFilter` |
+| Validation | Action filter | Ensures model state and request preconditions are valid | `ValidationFilter` |
+| Performance timing | Action filter | Measures action duration and attaches timing metadata | `PerformanceFilter` |
 
-The application is a console-based resource management system, but it contains employee management, project allocation rules, notifications, reporting, and persistence concerns. Keeping all logic in top-level statements would make those concerns difficult to test and change.
+## Layer responsibilities
 
-**Decision**
+### Database project
 
-Use a small layered structure:
+Contains persistence entities and JSON seed data. This is where the branch, staff, product, stock, shipping, identity verification, money-order, and transaction structures are defined.
 
-- `Program.cs` handles composition, dependency injection, and menu routing.
-- Services handle use cases, console interaction, and business rules.
-- Repository abstractions handle data access.
-- Models represent domain data.
+### Models project
 
-**Alternatives considered**
+Contains value objects, DTOs, and MVC-facing input/output models. Examples include branch summaries, transaction request models, and money-order request payloads.
 
-1. Put all application logic directly in `Program.cs`.
-2. Build a larger web/API architecture even though the current requirement is a console application.
-3. Use a single service containing employee, project, reporting, and persistence logic.
+### Services project
 
-**Consequences**
+Contains the real business logic and rules:
 
-- The console remains simple and the business logic has clear ownership.
-- Services can be tested independently of menu routing.
-- There is some additional structure and more files than a single-file prototype.
-- Console input/output still exists in the services, so a future UI separation would require another refactoring.
+- stock sufficiency validation
+- branch and staff restrictions
+- identity verification requirements for high-value money orders
+- shipping weight/service validation
+- manager-only transaction void and refund enforcement
+- summary and reporting generation
 
-### ADR-002: Depend on a generic repository abstraction
+### MVC project
 
-**Context**
+Contains controllers, Razor views, auth flow, policies, and UI composition.
 
-The application must support both JSON-file persistence and EF Core persistence. Services should not change when the storage technology changes.
+### Utilities project
 
-**Decision**
+Contains the cross-cutting infrastructure used by the app:
 
-Use `IBaseEntityRepository<TEntity>` with the common operations `Add`, `Update`, `GetById`, `GetAll`, and `Delete`. Services inject this interface through constructors.
+- correlation ID and logging
+- exception handling
+- maintenance mode and rate limiting
+- IP filtering and API key enforcement
+- audit store and action filters
 
-**Alternatives considered**
+## Core business flow
 
-1. Inject `BaseJsonRepository<TEntity>` directly.
-2. Inject `BaseEntityRepository<TEntity>` directly.
-3. Create a separate repository interface and implementation for every model.
-4. Access files or `DbContext` directly from services.
+1. A staff member signs in through the MVC login page.
+2. The login request is validated by the authentication service.
+3. A claims-based cookie identity is created with staff ID, role, and branch data.
+4. Controllers call services rather than repositories.
+5. Services enforce rules and persist records through the generic repository abstraction.
+6. Audit and security middleware record request metadata and enforce policy.
 
-**Consequences**
+## Decision records
 
-- JSON and EF Core implementations can be selected through dependency injection.
-- Service code is independent of the persistence mechanism.
-- The common interface only exposes operations shared by both stores.
-- Advanced provider-specific queries are not available through the abstraction without extending it.
-- The current synchronous interface is simple but may need async methods for a production-scale application.
-
-### ADR-003: Support JSON and EF Core through dependency injection
-
-**Context**
-
-JSON is useful for training, demonstration, and simple local execution. EF Core with SQLite provides a database-backed option. The application should be able to switch implementations without changing service constructors or business logic.
-
-**Decision**
-
-Register the open generic repository in `Program.cs`:
-
-- `BaseJsonRepository<TEntity>` for JSON-backed execution.
-- `BaseEntityRepository<TEntity>` for EF Core-backed execution.
-
-The active registration determines the storage implementation.
-
-**Alternatives considered**
-
-1. Run only with JSON files.
-2. Run only with EF Core.
-3. Detect the storage mechanism inside each service.
-4. Use a configuration-driven factory with custom runtime switching.
-
-**Consequences**
-
-- The default application is easy to run without database setup.
-- EF Core can be adopted without changing the application services.
-- Both implementations must honor the same repository behavior.
-- JSON files and database schema can diverge if they are not maintained or migrated together.
-- The current EF Core path requires database schema creation or migrations before use.
-
-### ADR-004: Model skills with proficiency values
+### ADR-001: MVC is the primary application model
 
 **Context**
-
-Employees have skills, and projects require skills. Matching only by skill name is not enough because an employee may have insufficient experience for a project.
+The original codebase started as a console project, but the assignment and current runtime target require an MVC-first flow.
 
 **Decision**
-
-Represent skills as objects instead of strings:
-
-- `EmployeeSkill` contains `Name` and `ProficiencyLevel`.
-- `ProjectSkill` contains `Name` and `MinimumProficiencyLevel`.
-- Proficiency values are constrained to 1 through 5.
-- An employee matches a project when every required skill exists at or above the required level.
-
-**Alternatives considered**
-
-1. Store skills as `List<string>` with no proficiency.
-2. Store skills as a dictionary of skill name to integer level.
-3. Use a global skill catalog with normalized skill IDs.
-4. Use free-form text fields on `Employee` and `ClientProject`.
+Use `ResourceManagementSystem.MVC` as the primary runtime application and keep `ResourceManagementSystem` as a legacy reference implementation.
 
 **Consequences**
+- The app matches the assignment UI expectations.
+- Business logic can be separated cleanly from the web layer.
+- The application becomes easier to test and secure.
 
-- Skill matching is explicit and understandable.
-- JSON serialization is straightforward.
-- EF Core can persist the collections as owned values.
-- Duplicate skill names are not currently prevented.
-- Skill names are compared case-insensitively but are still free-form strings; a normalized catalog may be needed later.
-
-### ADR-005: Enforce allocation rules in the project service
+### ADR-002: Business logic belongs in services
 
 **Context**
-
-Allocation validity depends on several records: employee status, project dates, existing overlapping allocations, and the new allocation. The rules must apply regardless of whether data comes from JSON or EF Core.
+The assignment explicitly requires that business logic live in the service layer.
 
 **Decision**
-
-Keep allocation validation in `ProjectService` before calling the allocation repository. Enforce:
-
-- Allocation percentage is 1–100.
-- Allocation dates are valid and inside the project dates.
-- Inactive employees cannot be allocated.
-- Overlapping allocation totals cannot exceed 100%.
-
-Date ranges are inclusive when determining overlap.
-
-**Alternatives considered**
-
-1. Enforce rules only in the console input layer.
-2. Enforce rules separately in each repository implementation.
-3. Use database constraints or triggers only.
-4. Add a separate domain rules engine.
+All validation, stock checks, shipping calculations, money-order checks, transaction policy checks, and report generation are implemented in services.
 
 **Consequences**
+- Controllers remain thin and focused on HTTP concerns.
+- Business rules are easier to test independently.
+- Repositories remain low-level data access mechanisms.
 
-- Rules apply to both console calls and direct service calls.
-- JSON and EF Core implementations share the same business behavior.
-- Repository operations remain generic and focused on persistence.
-- A concurrent multi-process application would need transaction or database-level protection to prevent race conditions between validation and insert.
-- Date-sensitive reporting may need a more detailed interval model in the future.
-
-### ADR-006: Use simulated console notifications
+### ADR-003: JSON persistence remains in the Database project
 
 **Context**
-
-The application must notify when an employee is allocated or released, but no email, messaging, or external notification provider has been specified.
+The user required that JSON files and persistence models remain in the Database project.
 
 **Decision**
-
-Define `IAllocationNotificationService` and register `SimulatedAllocationNotificationService`, which writes notification messages to the console after successful persistence.
-
-**Alternatives considered**
-
-1. Write notification code directly inside `ProjectService`.
-2. Send email or use a message broker.
-3. Persist notifications in a database table.
-4. Do not provide notifications until an external provider is available.
+The solution defines persistence entities under `ResourceManagementSystem.Database` and persists them through `BaseJsonRepository<TEntity>`.
 
 **Consequences**
+- The data layer is co-located with seed files.
+- The MVC project stays decoupled from persistence decisions.
+- The app remains portable and simple to demo locally.
 
-- Allocation notifications are visible immediately during console use.
-- A real provider can replace the simulated implementation through dependency injection.
-- Notifications are not durable and are not delivered outside the running process.
-- The service is called after the repository operation, so failed persistence does not produce a success notification.
-
-### ADR-007: Use simple aggregate reports over recorded allocations
+### ADR-004: Cookie authentication for MVC
 
 **Context**
-
-The system requires a bench report, project staffing summary, and department utilization report. The current allocation model contains date ranges and percentages but no requested reporting date or calendar-period parameter.
+The app is browser-based and not a tokenized API-first solution.
 
 **Decision**
-
-Use the following definitions:
-
-- Bench: active employees whose recorded allocation total is below 50%.
-- Project staffing: distinct employees, active employees, allocation record count, and total recorded allocation per project.
-- Department utilization: average recorded allocation per active employee, with each employee capped at 100%.
-
-**Alternatives considered**
-
-1. Require a reporting start and end date for every report.
-2. Calculate only current-day utilization.
-3. Count allocation records rather than percentages.
-4. Use time-weighted utilization across calendar days.
+Use ASP.NET Core cookie authentication with claims for staff identity, role, and branch details.
 
 **Consequences**
+- The login flow feels native to MVC.
+- Role and branch restrictions can be enforced using claims and policies.
+- JWT would be a different architecture and is not the chosen implementation here.
 
-- Reports are easy to understand and run from the console.
-- The reports work with both repository implementations.
-- Totals across non-overlapping periods can overstate utilization because the current reports aggregate stored percentages without time weighting.
-- A future reporting requirement should add a reporting period and interval-aware calculations.
+### ADR-005: Authorization is policy-based
+
+**Context**
+Branch operations require different privileges by role and branch scope.
+
+**Decision**
+Use policies such as `BranchManagerOnly` and `SameBranchOnly` in the MVC authorization pipeline.
+
+**Consequences**
+- Managers can be restricted to manager-only actions.
+- Staff access can be scoped to the same branch.
+- Authorization remains consistent across controllers and actions.
+
+### ADR-006: Audit logging is append-only and sanitized
+
+**Context**
+The system needs an audit trail without exposing sensitive values.
+
+**Decision**
+The audit filter writes rounded, sanitized entries to a JSON store and excludes secrets and protected document data.
+
+**Consequences**
+- The app remains auditable and reviewable.
+- Sensitive data such as passwords and API keys are protected.
+- Audit trails are easy to export or review manually.
+
+### ADR-007: Security is enforced in middleware before the request reaches controllers
+
+**Context**
+The app needs protection at the platform boundary, not only at the controller level.
+
+**Decision**
+Correlation ID, logging, IP restrictions, header hardening, maintenance gating, and API-key enforcement are implemented as middleware.
+
+**Consequences**
+- Requests are filtered before controller code executes.
+- Security concerns are centralized and reusable.
+- The app is easier to reason about under load and incident conditions.
+
+### ADR-008: Seed data is intentionally realistic and demonstrative
+
+**Context**
+The application must showcase branch operations, staff roles, transaction histories, and shipping scenarios in a convincing local demo.
+
+**Decision**
+The JSON seed files include multiple branches, diverse staff roles, realistic product catalog data, and historical transactions to support reporting and demos.
+
+**Consequences**
+- The app has enough data to make dashboards and reports useful.
+- Demo flows feel realistic without requiring a live database.
+- Documentation and screenshots can be based on actual dataset scenarios.
+
+## SOLID mapping
+
+| Principle | Application in this solution |
+| --- | --- |
+| Single Responsibility Principle | Services contain business operations, controllers handle HTTP, repositories handle file persistence |
+| Open/Closed Principle | New services or policies can be added without changing core repository implementations |
+| Liskov Substitution Principle | Repository abstractions are interchangeable for JSON-backed persistence |
+| Interface Segregation Principle | Service interfaces such as `IShippingService`, `IMoneyOrderService`, and `ITransactionService` expose focused contracts |
+| Dependency Inversion Principle | Controllers depend on abstractions (`IAuthenticationService`, `IBranchService`, etc.), not concrete implementations |
+
+## Security and audit section
+
+### Threats and mitigations
+
+| Threat | Mitigation |
+| --- | --- |
+| Unauthorized access to admin or integration routes | IP restriction middleware and authorization policies |
+| Credential stuffing against the MVC login page | Rate limiting on login endpoint |
+| Missing request traceability | Correlation ID middleware and request logging |
+| Sensitive information leakage in responses | Security headers and exception handling |
+| Missing audit trail for business actions | Action filters that write sanitized audit entries |
+| Protected integration abuse | `x-api-key` validation middleware |
+| Downtime or maintenance window misuse | Maintenance-mode middleware |
+
+### Audit model
+
+Audit entries capture useful operational metadata without saving raw password data or secret material. Fields include:
+
+- staff ID and role
+- branch code
+- controller and action name
+- path and HTTP method
+- result status code and execution duration
+- correlation ID
+- route values needed for traceability
+
+Representative samples can be reviewed in `ResourceManagementSystem.Database\JSONs\AUDIT-SAMPLE.json`.
+
+## Key domain entities
+
+- `BranchEntity`
+- `StaffEntity`
+- `ProductEntity`
+- `BranchStockEntity`
+- `ShippingOrderEntity`
+- `IdentityVerificationEntity`
+- `MoneyOrderEntity`
+- `TransactionEntity`
+- `TransactionLineItemEntity`
+- `CounterTerminalEntity`
+
+## Key services
+
+- `BranchService`
+- `StaffService`
+- `InventoryService`
+- `ShippingService`
+- `MoneyOrderService`
+- `TransactionService`
+- `ReportService`
+- `AuthenticationService`
+- `ProductCatalogService`
+
+## Validation strategy
+
+The project validates behavior through unit tests and MVC integration tests. The suite covers:
+
+- stock sufficiency and inventory rules
+- high-value money-order verification
+- shipping price and parcel limit enforcement
+- security middleware responses
+- login and authorization behavior
+- request logging and audit output
+
+## Summary
+
+The solution is deliberately layered to satisfy the assignment constraints: MVC is the active app, business logic lives in service classes, JSON persistence remains in the Database project, and security and audit concerns are enforced in middleware and filters.

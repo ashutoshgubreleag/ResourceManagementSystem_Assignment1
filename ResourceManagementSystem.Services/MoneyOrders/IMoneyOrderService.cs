@@ -4,6 +4,7 @@ namespace ResourceManagementSystem.Services.MoneyOrders;
 
 public interface IMoneyOrderService
 {
+    IEnumerable<MoneyOrderEntity> GetAllOrders();
     MoneyOrderEntity CreateMoneyOrder(MoneyOrderEntity moneyOrder, IdentityVerificationEntity? verification = null, decimal verificationThreshold = 1000m);
     bool RequiresIdentityVerification(decimal amount, decimal threshold);
     IdentityVerificationEntity AddIdentityVerification(IdentityVerificationEntity verification);

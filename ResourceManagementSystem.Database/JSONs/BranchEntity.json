@@ -1,1 +1,112 @@
-[]
+[
+    {
+        "Id":  1,
+        "Name":  "Central Branch",
+        "Region":  "North",
+        "Counters":  [
+                         {
+                             "IsActive":  true,
+                             "Name":  "Counter 1",
+                             "Id":  1,
+                             "BranchCode":  "BR-001"
+                         },
+                         {
+                             "IsActive":  true,
+                             "Name":  "Counter 2",
+                             "Id":  2,
+                             "BranchCode":  "BR-001"
+                         }
+                     ],
+        "BranchCode":  "BR-001",
+        "OpeningHours":  "08:00-18:00",
+        "Status":  0
+    },
+    {
+        "Id":  2,
+        "Name":  "Harbor Branch",
+        "Region":  "East",
+        "Counters":  [
+                         {
+                             "IsActive":  true,
+                             "Name":  "Counter 1",
+                             "Id":  3,
+                             "BranchCode":  "BR-002"
+                         },
+                         {
+                             "IsActive":  true,
+                             "Name":  "Counter 2",
+                             "Id":  4,
+                             "BranchCode":  "BR-002"
+                         }
+                     ],
+        "BranchCode":  "BR-002",
+        "OpeningHours":  "09:00-19:00",
+        "Status":  0
+    },
+    {
+        "Id":  3,
+        "Name":  "Midtown Branch",
+        "Region":  "Central",
+        "Counters":  [
+                         {
+                             "IsActive":  true,
+                             "Name":  "Counter 1",
+                             "Id":  5,
+                             "BranchCode":  "BR-003"
+                         },
+                         {
+                             "IsActive":  true,
+                             "Name":  "Counter 2",
+                             "Id":  6,
+                             "BranchCode":  "BR-003"
+                         }
+                     ],
+        "BranchCode":  "BR-003",
+        "OpeningHours":  "08:30-18:30",
+        "Status":  0
+    },
+    {
+        "Id":  4,
+        "Name":  "Riverside Branch",
+        "Region":  "South",
+        "Counters":  [
+                         {
+                             "IsActive":  true,
+                             "Name":  "Counter 1",
+                             "Id":  7,
+                             "BranchCode":  "BR-004"
+                         },
+                         {
+                             "IsActive":  true,
+                             "Name":  "Counter 2",
+                             "Id":  8,
+                             "BranchCode":  "BR-004"
+                         }
+                     ],
+        "BranchCode":  "BR-004",
+        "OpeningHours":  "07:30-17:30",
+        "Status":  0
+    },
+    {
+        "Id":  5,
+        "Name":  "Hillcrest Branch",
+        "Region":  "West",
+        "Counters":  [
+                         {
+                             "IsActive":  true,
+                             "Name":  "Counter 1",
+                             "Id":  9,
+                             "BranchCode":  "BR-005"
+                         },
+                         {
+                             "IsActive":  true,
+                             "Name":  "Counter 2",
+                             "Id":  10,
+                             "BranchCode":  "BR-005"
+                         }
+                     ],
+        "BranchCode":  "BR-005",
+        "OpeningHours":  "08:00-18:00",
+        "Status":  0
+    }
+]

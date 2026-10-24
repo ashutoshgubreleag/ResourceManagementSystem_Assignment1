@@ -1,0 +1,122 @@
+{
+  "info": {
+    "name": "ApexPost Demo API and MVC Requests",
+    "description": "Sample requests for the ApexPost MVC app: login, dashboard access, catalog overview, shipping validation, reporting, and protected integration access.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+    "_postman_id": "f4d9c65c-6b6c-4d44-bab8-ec1d66c6715c"
+  },
+  "item": [
+    {
+      "name": "Login as Administrator",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/x-www-form-urlencoded"
+          }
+        ],
+        "body": {
+          "mode": "urlencoded",
+          "urlencoded": [
+            { "key": "Email", "value": "admin@apexpost.local" },
+            { "key": "Password", "value": "ApexPost123!" }
+          ]
+        },
+        "url": {
+          "raw": "https://localhost:5001/Account/Login",
+          "protocol": "https",
+          "host": ["localhost:5001"],
+          "path": ["Account", "Login"]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "View Home Dashboard",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "https://localhost:5001/",
+          "protocol": "https",
+          "host": ["localhost:5001"],
+          "path": []
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "List Branches",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "https://localhost:5001/Branch",
+          "protocol": "https",
+          "host": ["localhost:5001"],
+          "path": ["Branch"]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "List Catalog",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "https://localhost:5001/Catalog",
+          "protocol": "https",
+          "host": ["localhost:5001"],
+          "path": ["Catalog"]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "Shipping Pricing Check",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "https://localhost:5001/Shipping",
+          "protocol": "https",
+          "host": ["localhost:5001"],
+          "path": ["Shipping"]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "Protected Integration Call",
+      "request": {
+        "method": "GET",
+        "header": [
+          { "key": "x-api-key", "value": "ApexPost-Partner-Key-2026" }
+        ],
+        "url": {
+          "raw": "https://localhost:5001/Integration/Partner",
+          "protocol": "https",
+          "host": ["localhost:5001"],
+          "path": ["Integration", "Partner"]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "View Reports",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "https://localhost:5001/Report",
+          "protocol": "https",
+          "host": ["localhost:5001"],
+          "path": ["Report"]
+        }
+      },
+      "response": []
+    }
+  ]
+}

@@ -1,98 +1,147 @@
+using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.HttpOverrides;
+using Microsoft.AspNetCore.RateLimiting;
+using ResourceManagementSystem.Database.Models;
 using ResourceManagementSystem.Repositories;
+using ResourceManagementSystem.Services.Authentication;
+using ResourceManagementSystem.Services.Branch;
+using ResourceManagementSystem.Services.Catalog;
+using ResourceManagementSystem.Services.Inventory;
+using ResourceManagementSystem.Services.MoneyOrders;
+using ResourceManagementSystem.Services.Reports;
+using ResourceManagementSystem.Services.Shipping;
+using ResourceManagementSystem.Services.Staff;
+using ResourceManagementSystem.Services.Transactions;
 using ResourceManagementSystem.Utilities;
 using System.Net;
+using System.Threading.RateLimiting;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// Add services to the container.
-builder.Services.AddControllersWithViews();
-//services.AddDbContext<ApplicationDbContext>(opts => opts.UseSqlite("Data Source=ResourceManagementSystem.db"));
-//services.AddScoped(typeof(IBaseEntityRepository<>), typeof(BaseEntityRepository<>));
-// To use JSON-backed repository for all entities, replace BaseEntityRepository registration with BaseJsonRepository:
+builder.Services.AddScoped<IAuditStore, JsonAuditStore>();
+builder.Services.AddScoped<AuditActionFilter>();
+builder.Services.AddScoped<ValidationFilter>();
+builder.Services.AddScoped<PerformanceFilter>();
+
+builder.Services.AddControllersWithViews(options =>
+{
+    options.Filters.Add<AuditActionFilter>();
+    options.Filters.Add<ValidationFilter>();
+    options.Filters.Add<PerformanceFilter>();
+});
+
+builder.Services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationScheme)
+    .AddCookie(options =>
+    {
+        options.LoginPath = "/Account/Login";
+        options.AccessDeniedPath = null;
+        options.Cookie.HttpOnly = true;
+        options.Cookie.SameSite = SameSiteMode.Lax;
+        options.Cookie.SecurePolicy = CookieSecurePolicy.Always;
+        options.Cookie.IsEssential = true;
+    });
+
+builder.Services.AddAuthorization(options =>
+{
+    options.AddPolicy("BranchManagerOnly", policy =>
+        policy.RequireRole(StaffRole.BranchManager.ToString()));
+
+    options.AddPolicy("SameBranchOnly", policy =>
+        policy.RequireAssertion(context =>
+        {
+            if (context.User.IsInRole(StaffRole.BranchManager.ToString()))
+            {
+                return true;
+            }
+
+            var userBranch = context.User.FindFirst("BranchCode")?.Value;
+            var httpContext = context.Resource as HttpContext;
+            var routeBranch = httpContext?.Request.RouteValues["branchCode"]?.ToString()
+                ?? httpContext?.Request.RouteValues["BranchCode"]?.ToString();
+
+            return !string.IsNullOrWhiteSpace(userBranch)
+                && !string.IsNullOrWhiteSpace(routeBranch)
+                && string.Equals(userBranch, routeBranch, StringComparison.OrdinalIgnoreCase);
+        }));
+});
+
+builder.Services.AddRateLimiter(options =>
+{
+    options.RejectionStatusCode = StatusCodes.Status429TooManyRequests;
+
+    options.AddPolicy("login", httpContext =>
+        RateLimitPartition.GetFixedWindowLimiter(
+            partitionKey: httpContext.Connection.RemoteIpAddress?.ToString() ?? "anonymous",
+            factory: _ => new FixedWindowRateLimiterOptions
+            {
+                PermitLimit = 5,
+                Window = TimeSpan.FromMinutes(5),
+                QueueLimit = 0,
+                AutoReplenishment = true
+            }));
+
+    options.AddPolicy("partner", httpContext =>
+        RateLimitPartition.GetFixedWindowLimiter(
+            partitionKey: httpContext.Connection.RemoteIpAddress?.ToString() ?? "partner-unknown",
+            factory: _ => new FixedWindowRateLimiterOptions
+            {
+                PermitLimit = 20,
+                Window = TimeSpan.FromSeconds(30),
+                QueueLimit = 0,
+                AutoReplenishment = true
+            }));
+});
+
 builder.Services.AddScoped(typeof(IBaseEntityRepository<>), typeof(BaseJsonRepository<>));
+builder.Services.AddScoped<IAuthenticationService, AuthenticationService>();
+builder.Services.AddScoped<IBranchService, BranchService>();
+builder.Services.AddScoped<IStaffService, StaffService>();
+builder.Services.AddScoped<IInventoryService, InventoryService>();
+builder.Services.AddScoped<IShippingService, ShippingService>();
+builder.Services.AddScoped<IMoneyOrderService, MoneyOrderService>();
+builder.Services.AddScoped<ITransactionService, TransactionService>();
+builder.Services.AddScoped<IReportService, ReportService>();
+builder.Services.AddScoped<IProductCatalogService, ProductCatalogService>();
 builder.Services.AddUtilitiesExtentions();
-
-//If your application runs behind IIS, Nginx, a load balancer, or another reverse proxy, configure forwarded headers only for proxies you actually trust.
-//builder.Services.Configure<ForwardedHeadersOptions>(options =>
-//{
-//    options.ForwardedHeaders =
-//        ForwardedHeaders.XForwardedFor |
-//        ForwardedHeaders.XForwardedProto;
-
-//    // Replace with the actual IP address of your reverse proxy.
-//    options.KnownProxies.Add(
-//        IPAddress.Parse("10.0.0.10"));
-//});
 
 var app = builder.Build();
 
-// 1.Correlation ID must be established first.
 app.UseMiddleware<CorrelationIdMiddleware>();
-
-// 2. Log the completed request, including failures.
 app.UseMiddleware<RequestLoggingMiddleware>();
-
-// 3. Exception handling middleware should be placed after logging middleware to ensure that exceptions are logged.
 app.UseExceptionHandler();
 
-// 4. Process forwarded headers from trusted proxies only.
-// Register this before middleware that relies on client IP or scheme.
-// app.UseForwardedHeaders();
-
-// 5. Enable HTTP Strict Transport Security (HSTS) outside Development
-//    to instruct browsers to use HTTPS for subsequent requests.
 if (!app.Environment.IsDevelopment())
 {
     app.UseHsts();
 }
 
-// 6. Redirect incoming HTTP requests to HTTPS.
 app.UseHttpsRedirection();
-
-// 7. Restrict administrative and integration endpoints by client IP.
 app.UseMiddleware<IpRestrictionMiddleware>();
 
-// 8. Apply security headers to outgoing HTTP responses.
-//    Use OnStarting to ensure headers are set before the response is sent.
 app.Use(async (context, next) =>
 {
     context.Response.OnStarting(() =>
     {
         var headers = context.Response.Headers;
-
-        // Restrict resource loading to the same origin and disable
-        // plugins and framing to mitigate common web-based attacks.
-        headers["Content-Security-Policy"] =
-            "default-src 'self'; " +
-            "object-src 'none'; " +
-            "base-uri 'self'; " +
-            "frame-ancestors 'none';";
-
-        // Prevent browsers from MIME-sniffing the response content type.
+        headers["Content-Security-Policy"] = "default-src 'self'; object-src 'none'; base-uri 'self'; frame-ancestors 'none';";
         headers["X-Content-Type-Options"] = "nosniff";
-
-        // Prevent the application from being embedded in frames,
-        // helping protect against clickjacking attacks.
         headers["X-Frame-Options"] = "DENY";
-
-        // Limit referrer information shared with other origins.
-        headers["Referrer-Policy"] =
-            "strict-origin-when-cross-origin";
-
+        headers["Referrer-Policy"] = "strict-origin-when-cross-origin";
         return Task.CompletedTask;
     });
 
     await next();
 });
 
-// 9. Block application requests while maintenance is enabled.
 app.UseMiddleware<MaintenanceModeMiddleware>();
 
 app.UseRouting();
-
+app.UseAuthentication();
 app.UseAuthorization();
+app.UseRateLimiter();
+app.UseMiddleware<ApiKeyValidationMiddleware>();
 
+app.MapGet("/health", () => Results.Ok(new { status = "Healthy" }));
 app.MapStaticAssets();
 
 app.MapControllerRoute(
@@ -100,5 +149,6 @@ app.MapControllerRoute(
     pattern: "{controller=Home}/{action=Index}/{id?}")
     .WithStaticAssets();
 
-
 app.Run();
+
+public partial class Program { }

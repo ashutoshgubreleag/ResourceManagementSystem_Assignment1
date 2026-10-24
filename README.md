@@ -1,162 +1,142 @@
-# Resource Management System
+# ApexPost MVC Branch Operations Platform
 
-A .NET 10 console application for managing employees, client projects, project allocations, skills, and workforce reports.
+A .NET 10 MVC-first branch operations application for ApexPost. The solution is intentionally structured around service-layer business logic, JSON-backed persistence, and a secure MVC front end. The active app is `ResourceManagementSystem.MVC`; the root `ResourceManagementSystem` project remains a legacy reference implementation rather than the current runtime path.
 
-## How to run
+## Solution structure
 
-Prerequisites:
+- `ResourceManagementSystem.MVC` - active MVC app, controllers, Razor views, auth, routing, middleware, and filters
+- `ResourceManagementSystem.Services` - domain/business logic and validation rules
+- `ResourceManagementSystem.Database` - persistence models and JSON seed data
+- `ResourceManagementSystem.Models` - DTOs, view models, and value objects
+- `ResourceManagementSystem.Repositories` - generic JSON repository abstraction
+- `ResourceManagementSystem.Utilities` - audit, middleware, security helpers, and cross-cutting behavior
+- `ResourceManagementSystem.Tests` - xUnit and integration tests
+- `ResourceManagementSystem` - legacy console/reference project, not the active application
+
+## Prerequisites
 
 - .NET 10 SDK
-- Visual Studio 2026 or another .NET-compatible IDE
+- Visual Studio 2026 or any IDE that supports .NET 10
+- Optional: Postman or curl for sample integration requests
+
+## Run the app
 
 From the repository root:
 
 ```powershell
-dotnet restore .\ResourceManagementSystem\ResourceManagementSystem.csproj
-dotnet run --project .\ResourceManagementSystem\ResourceManagementSystem.csproj
+dotnet restore .\ResourceManagementSystem.slnx
+dotnet run --project .\ResourceManagementSystem.MVC\ResourceManagementSystem.MVC.csproj
 ```
 
-The application uses the generic JSON repository by default. Employee data is stored in `ResourceManagementSystem/Employee.json`. Projects and allocations are stored in `ClientProject.json` and `ProjectAllocation.json` when created.
+To watch for file changes during local development:
 
-To use EF Core with SQLite, change the registrations in `ResourceManagementSystem/Program.cs`:
-
-```csharp
-services.AddDbContext<ApplicationDbContext>(options =>
-    options.UseSqlite("Data Source=ResourceManagementSystem.db"));
-services.AddScoped(typeof(IBaseEntityRepository<>), typeof(BaseEntityRepository<>));
+```powershell
+dotnet watch --project .\ResourceManagementSystem.MVC\ResourceManagementSystem.MVC.csproj run
 ```
 
-Create or migrate the database schema before using the EF Core backend.
+Open the browser at the local ASP.NET Core URL shown in the console, usually:
+
+- https://localhost:5001
+- http://localhost:5000
+
+## Architecture principle
+
+The active implementation follows this rule:
+
+- Controller -> Service -> Repository
+- No controller should call repositories directly
+- Business rules remain in the service layer
+- Persistence models, seed JSON, and audit examples stay in the Database project
+
+## Demo login accounts
+
+These demo accounts are available from the default seed data in `ResourceManagementSystem.Database\JSONs\StaffEntity.json`.
+
+| Email | Password | Role | Home branch | Notes |
+| --- | --- | --- | --- | --- |
+| `admin@apexpost.local` | `ApexPost123!` | Administrator | `BR-001` | System administrator and full access |
+| `north.manager@apexpost.local` | `ApexPost123!` | BranchManager | `BR-001` | Branch manager for North operations |
+| `midtown.manager@apexpost.local` | `ApexPost123!` | BranchManager | `BR-003` | Regional manager example |
+| `harbor.clerk@apexpost.local` | `ApexPost123!` | CounterClerk | `BR-002` | Front counter operations |
+| `riverside.auditor@apexpost.local` | `ApexPost123!` | Auditor | `BR-004` | Audit and reporting access |
+
+The password is intentionally simple for assignment/demo purposes and is read from `Authentication:DemoPassword` in app settings.
+
+## API key configuration with user-secrets
+
+Protected integration endpoints use the `x-api-key` header. To set the application key locally without editing source files:
+
+```powershell
+dotnet user-secrets init --project .\ResourceManagementSystem.MVC\ResourceManagementSystem.MVC.csproj
+dotnet user-secrets set "Integration:ApiKey" "ApexPost-Partner-Key-2026" --project .\ResourceManagementSystem.MVC\ResourceManagementSystem.MVC.csproj
+```
+
+The middleware reads `Integration:ApiKey` and validates it against the incoming request header. The project also includes a default value in `appsettings.json` for local demo use.
 
 ## Implemented features
 
-### Employee management
+- MVC-first branch operations dashboard and navigation
+- Branch, catalog, shipping, money-order, transaction, and reporting views
+- Service-layer validation for stock sufficiency, shipping pricing, and money-order verification
+- Authorization policies for branch manager access and same-branch access
+- Cookie-based authentication for MVC staff accounts
+- API-key validation for protected integration endpoints
+- Correlation ID and request logging middleware
+- Security headers, IP restriction, maintenance mode, and exception handling
+- Audit filter and JSON-backed audit persistence
+- Seed data for branches, staff, products, stock, shipping orders, and transactions
 
-- Add employees with name, email, position, department, salary, and skills.
-- Assign skill proficiency levels from 1 through 5.
-- Update employee details and skills.
-- Deactivate employees using the generic repository's `GetById` and `Update` operations.
-- List employees with their status and skills.
+## Seed data and sample artifacts
 
-### Project management
+The solution ships with realistic assignment data in `ResourceManagementSystem.Database\JSONs`:
 
-- Create client projects with a name, client, date range, status, and required skills.
-- Set a minimum proficiency level from 1 through 5 for every required skill.
-- List all projects.
+- `BranchEntity.json` - 5 branch records
+- `StaffEntity.json` - 20 staff records across roles
+- `ProductEntity.json` - 30 catalog products
+- `BranchStockEntity.json` - branch stock snapshots
+- `ShippingOrderEntity.json` - historical shipping samples
+- `TransactionEntity.json` - 40 historical transactions
+- `MoneyOrderEntity.json` - sample money-order activity
+- `IdentityVerificationEntity.json` - verification records
+- `audit-log.json` - generated runtime audit store
+- `AUDIT-SAMPLE.json` - representative sample audit entries for documentation and demos
 
-### Employee allocation
+## Sample requests
 
-- Allocate an employee to a project for a date range and percentage.
-- Enforce these rules:
-  - Allocation percentage must be between 1% and 100%.
-  - Allocation dates must fall within the project dates.
-  - Overlapping employee allocation cannot exceed 100%.
-  - Inactive employees cannot be allocated.
-- Release all allocations for an employee and project using project ID and employee ID.
-- Display simulated notifications after successful allocation and release.
+A ready-to-import Postman collection is included at the repository root as `ApexPost-Postman-Collection.json`.
 
-### Employee suggestions
+Typical curl examples:
 
-Suggest active employees who have all required project skills, meet the minimum proficiency levels, and have available capacity during the project period.
+```powershell
+# Login (MVC form post)
+curl -X POST "https://localhost:5001/Account/Login" -H "Content-Type: application/x-www-form-urlencoded" -d "Email=admin@apexpost.local&Password=ApexPost123!"
 
-### Reports
+# Protected integration call using API key
+curl -X GET "https://localhost:5001/Integration/Partner" -H "x-api-key: ApexPost-Partner-Key-2026"
 
-- **Bench report**: active employees with recorded allocation below the defined 50% threshold.
-- **Project staffing summary**: employee counts, allocation counts, and total allocation per project.
-- **Utilisation by department**: average active-employee utilization by department, with each employee capped at 100%.
-
-## Console menu
-
-```text
-1) Add employee
-2) Update employee
-3) Deactivate an employee
-4) Get all employees
-5) Create client project
-6) Get all projects
-7) Allocate employee to project
-8) Suggest available employees for project
-9) Release employee allocation
-10) Bench report
-11) Project staffing summary
-12) Utilisation by department
-Q) Quit
+# Health check
+curl https://localhost:5001/health
 ```
 
-## Sample console session
+The Postman collection contains examples for login, dashboard access, catalog retrieval, reporting, and integration requests.
 
-```text
-Choose an option:
-5) Create client project
-Enter choice: 5
+## Testing
 
--- Create Client Project --
-Project name: Website Redesign
-Client: Contoso Ltd
-Start date (yyyy-MM-dd): 2026-04-01
-End date (yyyy-MM-dd): 2026-06-30
-Number of required skills: 1
-Required skill 1 name: C#
-Minimum proficiency for C# (1-5): 4
-Created project with Id 1. Press Enter to continue...
+Run the automated suite:
 
-Choose an option:
-8) Suggest available employees for project
-Enter choice: 8
-
--- Suggest Available Employees --
-Project Id: 1
-Id: 1, Name: John Doe, Skills: C# (4/5), SQL (3/5)
-Press Enter to continue...
-
-Choose an option:
-7) Allocate employee to project
-Enter choice: 7
-
--- Allocate Employee --
-Project Id: 1
-Employee Id: 1
-Allocation start date (yyyy-MM-dd): 2026-04-01
-Allocation end date (yyyy-MM-dd): 2026-06-30
-Allocation percentage (1-100): 50
-[Notification] John Doe was allocated to project 'Website Redesign' from 2026-04-01 to 2026-06-30 at 50% allocation.
-Employee allocated successfully. Press Enter to continue...
-
-Choose an option:
-10) Bench report
-Enter choice: 10
-
--- Bench Report --
-Active employees allocated below 50%:
-Id: 2, Name: Smith Watts, Department: IT, Allocation: 0%
-Press Enter to continue...
-
-Choose an option:
-11) Project staffing summary
-Enter choice: 11
-
--- Project Staffing Summary --
-Id: 1, Name: Website Redesign, Client: Contoso Ltd, Status: Planned, Employees: 1 (1 active), Allocations: 1, Total allocation: 50%
-Press Enter to continue...
-
-Choose an option:
-9) Release employee allocation
-Enter choice: 9
-
--- Release Employee Allocation --
-Project Id: 1
-Employee Id: 1
-[Notification] John Doe was released from project 'Website Redesign' for the allocation period 2026-04-01 to 2026-06-30.
-Employee allocation released. Press Enter to continue...
+```powershell
+dotnet test .\ResourceManagementSystem.Tests\ResourceManagementSystem.Tests.csproj
 ```
 
-## Repository implementations
+The tests cover:
 
-Services depend on `IBaseEntityRepository<TEntity>`, so persistence can be changed through dependency injection without changing service code:
+- stock sufficiency logic
+- money-order verification rules
+- shipping price and parcel limit checks
+- MVC security flows and middleware behavior
+- login and authorization behavior
+- request logging and audit output
 
-- `BaseJsonRepository<TEntity>` for JSON files.
-- `BaseEntityRepository<TEntity>` for EF Core and SQLite.
+## Notes
 
-The default registration in `Program.cs` uses `BaseJsonRepository<TEntity>`.
-
-This line is added to add the README.md file in feature branch with some changes.
+This project is intentionally structured for training/assignment use with JSON persistence, service-layer rules, and MVC UI patterns. It is not a production credential store; the demo password and API key are intentionally simple and are meant to demonstrate authentication and integration flow in a local environment.

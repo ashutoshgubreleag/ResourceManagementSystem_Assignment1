@@ -1,0 +1,20 @@
+@model IEnumerable<dynamic>
+@{
+    ViewData["Title"] = "Reports";
+}
+
+<h2>Branch reports</h2>
+
+@if (Model != null)
+{
+    foreach (var branch in Model)
+    {
+        <div class="card mb-3">
+            <div class="card-body">
+                <h4>@branch.Name (@branch.BranchCode)</h4>
+                <p>Low stock items: @((branch.LowStock as IEnumerable<dynamic>)?.Count() ?? 0)</p>
+                <p>Daily sales: @((branch.Sales as IEnumerable<dynamic>)?.Count() ?? 0)</p>
+            </div>
+        </div>
+    }
+}

@@ -80,7 +80,7 @@ public sealed class IpRestrictionMiddleware
             return;
         }
 
-        var clientIP = context.Connection.RemoteIpAddress;
+        var clientIP = GetClientIPAddress(context);
 
         if (clientIP is null ||
             !_allowedIPs.Contains(clientIP.MapToIPv6()))
@@ -97,6 +97,26 @@ public sealed class IpRestrictionMiddleware
         }
 
         await _next(context);
+    }
+
+    private static IPAddress? GetClientIPAddress(HttpContext context)
+    {
+        var remoteIp = context.Connection.RemoteIpAddress;
+        if (remoteIp is not null)
+        {
+            return remoteIp;
+        }
+
+        var forwardedFor = context.Request.Headers["X-Forwarded-For"].FirstOrDefault();
+        if (string.IsNullOrWhiteSpace(forwardedFor))
+        {
+            return null;
+        }
+
+        var first = forwardedFor.Split(',')[0].Trim();
+        return IPAddress.TryParse(first, out var parsed)
+            ? parsed
+            : null;
     }
 
     private bool IsProtectedPath(PathString path)

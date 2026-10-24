@@ -1,1 +1,56 @@
-[]
+[
+    {
+        "Id":  1,
+        "MaskedDocumentNumber":  "XXXX-XXXX-XXXX-1001",
+        "DocumentType":  1,
+        "Result":  0,
+        "BranchCode":  "BR-001",
+        "VerifiedAt":  "2026-10-02T11:05:00Z",
+        "StaffId":  3
+    },
+    {
+        "Id":  2,
+        "MaskedDocumentNumber":  "XXXX-XXXX-XXXX-1002",
+        "DocumentType":  2,
+        "Result":  1,
+        "BranchCode":  "BR-002",
+        "VerifiedAt":  "2026-10-03T11:10:00Z",
+        "StaffId":  4
+    },
+    {
+        "Id":  3,
+        "MaskedDocumentNumber":  "XXXX-XXXX-XXXX-1003",
+        "DocumentType":  3,
+        "Result":  0,
+        "BranchCode":  "BR-003",
+        "VerifiedAt":  "2026-10-04T11:15:00Z",
+        "StaffId":  5
+    },
+    {
+        "Id":  4,
+        "MaskedDocumentNumber":  "XXXX-XXXX-XXXX-1004",
+        "DocumentType":  0,
+        "Result":  1,
+        "BranchCode":  "BR-004",
+        "VerifiedAt":  "2026-10-05T11:20:00Z",
+        "StaffId":  6
+    },
+    {
+        "Id":  5,
+        "MaskedDocumentNumber":  "XXXX-XXXX-XXXX-1005",
+        "DocumentType":  1,
+        "Result":  0,
+        "BranchCode":  "BR-005",
+        "VerifiedAt":  "2026-10-06T11:25:00Z",
+        "StaffId":  7
+    },
+    {
+        "Id":  6,
+        "MaskedDocumentNumber":  "XXXX-XXXX-XXXX-1006",
+        "DocumentType":  2,
+        "Result":  1,
+        "BranchCode":  "BR-001",
+        "VerifiedAt":  "2026-10-07T11:30:00Z",
+        "StaffId":  8
+    }
+]

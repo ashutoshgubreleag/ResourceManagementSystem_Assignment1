@@ -1,0 +1,33 @@
+@model List<ResourceManagementSystem.Database.Models.TransactionEntity>
+@{
+    ViewData["Title"] = "Transactions";
+}
+
+<div class="d-flex justify-content-between align-items-center mb-3">
+    <h2>Counter transactions</h2>
+    <a asp-action="Create" class="btn btn-primary">New transaction</a>
+</div>
+
+<table class="table table-striped table-bordered">
+    <thead>
+        <tr>
+            <th>Id</th>
+            <th>Branch</th>
+            <th>Clerk</th>
+            <th>Status</th>
+            <th>Amount</th>
+        </tr>
+    </thead>
+    <tbody>
+        @foreach (var tx in Model)
+        {
+            <tr>
+                <td>@tx.Id</td>
+                <td>@tx.BranchCode</td>
+                <td>@tx.ClerkStaffId</td>
+                <td>@tx.Status</td>
+                <td>@tx.TotalAmount</td>
+            </tr>
+        }
+    </tbody>
+</table>
