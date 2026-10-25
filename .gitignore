@@ -1,3 +1,25 @@
-.vs/
+## Build output
 bin/
-obj/ 
+obj/
+[Dd]ebug/
+[Rr]elease/
+TestResults/
+*.trx
+
+## IDE
+.vs/
+.vscode/
+.idea/
+*.user
+*.suo
+
+## Runtime data written by the app (seed data lives in ResourceManagementSystem.Database/JSONs)
+**/App_Data/
+*.jsonl
+*.json.tmp
+
+## Secrets: never commit keys (use dotnet user-secrets)
+secrets.json
+appsettings.*.local.json
+*.pfx
+.env

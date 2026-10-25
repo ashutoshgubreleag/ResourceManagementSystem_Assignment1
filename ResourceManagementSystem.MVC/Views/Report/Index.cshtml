@@ -1,20 +1,14 @@
-@model IEnumerable<dynamic>
 @{
     ViewData["Title"] = "Reports";
 }
-
-<h2>Branch reports</h2>
-
-@if (Model != null)
-{
-    foreach (var branch in Model)
+<h1>Reports</h1>
+<p class="lead">Every report also downloads as JSON: add <code>?format=json</code>.</p>
+<div class="grid cols-2">
+    <a class="card" asp-action="DailySales"><h2>Daily branch sales</h2><p>Retail versus services, tax and money order face value per branch for a day.</p></a>
+    <a class="card" asp-action="LowStock"><h2>Low stock</h2><p>Products at or below their reorder level (or a threshold you set) per branch.</p></a>
+    <a class="card" asp-action="ShippingVolume"><h2>Shipping volume</h2><p>Lodged letters and parcels by destination zone and service level.</p></a>
+    @if (User.StaffRole is not StaffRole.CounterClerk)
     {
-        <div class="card mb-3">
-            <div class="card-body">
-                <h4>@branch.Name (@branch.BranchCode)</h4>
-                <p>Low stock items: @((branch.LowStock as IEnumerable<dynamic>)?.Count() ?? 0)</p>
-                <p>Daily sales: @((branch.Sales as IEnumerable<dynamic>)?.Count() ?? 0)</p>
-            </div>
-        </div>
+        <a class="card" asp-action="MoneyOrders"><h2>Money orders and identity checks</h2><p>The auditor view: money orders issued and identity verifications per branch.</p></a>
     }
-}
+</div>

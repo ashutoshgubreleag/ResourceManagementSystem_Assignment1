@@ -1,0 +1,6 @@
+@model BranchFormViewModel
+@{
+    ViewData["Title"] = Model.IsEdit ? "Edit branch" : "Add branch";
+}
+<h1>@(Model.IsEdit ? $"Edit {Model.BranchCode}" : "Add branch")</h1>
+<partial name="_BranchForm" model="Model" />

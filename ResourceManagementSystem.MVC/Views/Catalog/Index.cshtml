@@ -1,32 +1,68 @@
-@model IEnumerable<dynamic>
+@model IReadOnlyList<ResourceManagementSystem.Services.Catalog.CatalogueItem>
 @{
-    ViewData["Title"] = "Catalog";
+    ViewData["Title"] = "Catalogue and stock";
+    var branch = ViewData["Branch"] as string ?? "";
+    var category = ViewData["Category"] as ProductCategory?;
+    var canAdjust = User.StaffRole == StaffRole.Administrator || (User.StaffRole == StaffRole.BranchManager && User.BranchCode.Value == branch);
 }
-
-<h2>Product catalogue and stock</h2>
-
-<table class="table table-striped table-bordered">
-    <thead>
-        <tr>
-            <th>SKU</th>
-            <th>Name</th>
-            <th>Category</th>
-            <th>Unit price</th>
-            <th>Tax</th>
-            <th>Quantity</th>
-        </tr>
-    </thead>
-    <tbody>
-        @foreach (var item in Model)
+<div class="page-head">
+    <div>
+        <h1>Catalogue and stock</h1>
+        <p class="lead">Retail products with stock on hand at <span class="mono">@branch</span>. Prices exclude tax.</p>
+    </div>
+    <form method="get" asp-action="Index" class="row">
+        @if (User.CanSeeAllBranches)
         {
-            <tr>
-                <td>@item.Sku</td>
-                <td>@item.Name</td>
-                <td>@item.Category</td>
-                <td>@item.UnitPrice</td>
-                <td>@item.TaxCategory</td>
-                <td>@item.Quantity</td>
-            </tr>
+            <input type="text" name="branch" value="@branch" placeholder="BR-001" aria-label="Branch" />
         }
-    </tbody>
-</table>
+        <select name="category" aria-label="Category">
+            <option value="">All categories</option>
+            @foreach (var c in Enum.GetValues<ProductCategory>())
+            {
+                <option value="@c" selected="@(category == c)">@c</option>
+            }
+        </select>
+        <button class="btn secondary" type="submit">Filter</button>
+    </form>
+</div>
+<div class="card table-wrap">
+    <table>
+        <thead><tr><th>SKU</th><th>Product</th><th>Category</th><th class="num">Price</th><th>Tax</th><th class="num">On hand</th><th class="num">Reorder at</th><th></th></tr></thead>
+        <tbody>
+            @foreach (var item in Model)
+            {
+                <tr>
+                    <td class="mono">@item.Product.Sku</td>
+                    <td>@item.Product.Name</td>
+                    <td>@item.Product.Category</td>
+                    <td class="num">@item.Product.UnitPrice</td>
+                    <td>@item.Product.TaxCategory</td>
+                    <td class="num">@item.QuantityOnHand</td>
+                    <td class="num">@item.ReorderThreshold</td>
+                    <td>@if (item.IsLowStock) { <span class="badge warn">Low</span> }</td>
+                </tr>
+            }
+        </tbody>
+    </table>
+</div>
+@if (canAdjust)
+{
+    <div class="card mt">
+        <h2>Adjust stock</h2>
+        <form asp-action="AdjustStock" method="post" class="form-grid">
+            <input type="hidden" name="BranchCode" value="@branch" />
+            <div>
+                <label for="adj-sku">Product</label>
+                <select id="adj-sku" name="Sku">
+                    @foreach (var item in Model)
+                    {
+                        <option value="@item.Product.Sku.Value">@item.Product.Sku · @item.Product.Name</option>
+                    }
+                </select>
+            </div>
+            <div><label for="adj-qty">Change (+ receive, − write off)</label><input id="adj-qty" type="number" name="QuantityChange" value="10" min="-1000" max="1000" /></div>
+            <div><label for="adj-reason">Reason</label><input id="adj-reason" type="text" name="Reason" placeholder="Delivery from DC" /></div>
+            <div><label>&nbsp;</label><button type="submit" class="btn">Apply</button></div>
+        </form>
+    </div>
+}

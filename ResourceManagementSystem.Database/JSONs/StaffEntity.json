@@ -1,172 +1,218 @@
-{
-  "staffentitys": [
-    {
-      "Id": 1,
-      "Name": "System Administrator",
-      "Email": "admin@apexpost.local",
-      "Role": 3,
-      "HomeBranchCode": "BR-001",
-      "IsActive": true
-    },
-    {
-      "Id": 2,
-      "Name": "North Branch Manager",
-      "Email": "north.manager@apexpost.local",
-      "Role": 1,
-      "HomeBranchCode": "BR-001",
-      "IsActive": true
-    },
-    {
-      "Id": 3,
-      "Name": "East Branch Manager",
-      "Email": "east.manager@apexpost.local",
-      "Role": 1,
-      "HomeBranchCode": "BR-002",
-      "IsActive": true
-    },
-    {
-      "Id": 4,
-      "Name": "South Branch Manager",
-      "Email": "south.manager@apexpost.local",
-      "Role": 1,
-      "HomeBranchCode": "BR-004",
-      "IsActive": true
-    },
-    {
-      "Id": 5,
-      "Name": "West Branch Manager",
-      "Email": "west.manager@apexpost.local",
-      "Role": 1,
-      "HomeBranchCode": "BR-005",
-      "IsActive": true
-    },
-    {
-      "Id": 6,
-      "Name": "Harbor Clerk",
-      "Email": "harbor.clerk@apexpost.local",
-      "Role": 0,
-      "HomeBranchCode": "BR-002",
-      "IsActive": true
-    },
-    {
-      "Id": 7,
-      "Name": "Central Clerk",
-      "Email": "central.clerk@apexpost.local",
-      "Role": 0,
-      "HomeBranchCode": "BR-001",
-      "IsActive": true
-    },
-    {
-      "Id": 8,
-      "Name": "Riverside Clerk",
-      "Email": "river.clerk@apexpost.local",
-      "Role": 0,
-      "HomeBranchCode": "BR-004",
-      "IsActive": true
-    },
-    {
-      "Id": 9,
-      "Name": "Hillcrest Clerk",
-      "Email": "hill.clerk@apexpost.local",
-      "Role": 0,
-      "HomeBranchCode": "BR-005",
-      "IsActive": true
-    },
-    {
-      "Id": 10,
-      "Name": "Hub Counter Clerk",
-      "Email": "hub.clerk@apexpost.local",
-      "Role": 0,
-      "HomeBranchCode": "BR-003",
-      "IsActive": true
-    },
-    {
-      "Id": 11,
-      "Name": "Metro Counter Clerk",
-      "Email": "metro.clerk@apexpost.local",
-      "Role": 0,
-      "HomeBranchCode": "BR-003",
-      "IsActive": true
-    },
-    {
-      "Id": 12,
-      "Name": "Riverside Auditor",
-      "Email": "riverside.auditor@apexpost.local",
-      "Role": 2,
-      "HomeBranchCode": "BR-004",
-      "IsActive": true
-    },
-    {
-      "Id": 13,
-      "Name": "Audit Review Specialist",
-      "Email": "audit.review@apexpost.local",
-      "Role": 2,
-      "HomeBranchCode": "BR-001",
-      "IsActive": true
-    },
-    {
-      "Id": 14,
-      "Name": "Audit Operations Lead",
-      "Email": "audit.ops@apexpost.local",
-      "Role": 2,
-      "HomeBranchCode": "BR-005",
-      "IsActive": true
-    },
-    {
-      "Id": 15,
-      "Name": "Systems Administrator",
-      "Email": "systems.admin@apexpost.local",
-      "Role": 3,
-      "HomeBranchCode": "BR-003",
-      "IsActive": true
-    },
-    {
-      "Id": 16,
-      "Name": "Terminal Clerk",
-      "Email": "terminal.clerk@apexpost.local",
-      "Role": 0,
-      "HomeBranchCode": "BR-001",
-      "IsActive": true
-    },
-    {
-      "Id": 17,
-      "Name": "Cargo Desk Clerk",
-      "Email": "cargo.clerk@apexpost.local",
-      "Role": 0,
-      "HomeBranchCode": "BR-002",
-      "IsActive": true
-    },
-    {
-      "Id": 18,
-      "Name": "Service Desk Clerk",
-      "Email": "service.clerk@apexpost.local",
-      "Role": 0,
-      "HomeBranchCode": "BR-004",
-      "IsActive": true
-    },
-    {
-      "Id": 19,
-      "Name": "Dispatch Operations Clerk",
-      "Email": "dispatch.clerk@apexpost.local",
-      "Role": 0,
-      "HomeBranchCode": "BR-005",
-      "IsActive": true
-    },
-    {
-      "Id": 20,
-      "Name": "Support Coordinator",
-      "Email": "support.coordinator@apexpost.local",
-      "Role": 0,
-      "HomeBranchCode": "BR-003",
-      "IsActive": true
-    },
-    {
-      "Id": 21,
-      "Name": "Ashutosh Gubrele",
-      "Email": "ashutosh.gubrele@gmail.com",
-      "Role": 0,
-      "HomeBranchCode": "BR-IND-INDORE",
-      "IsActive": true
-    }
-  ]
-}
+[
+  {
+    "Id": 1,
+    "Name": "Avery Admin",
+    "Email": "admin@apexpost.local",
+    "Role": "Administrator",
+    "HomeBranchCode": "BR-001",
+    "IsActive": true,
+    "PasswordHash": "PBKDF2$100000$1WIw9+8h6K5o76wd72maGw==$KZny1K7LyeKvOadi3GBxl0XCdJSG0+KkJNDCjKyHro4="
+  },
+  {
+    "Id": 2,
+    "Name": "Jordan Systems",
+    "Email": "it.admin@apexpost.local",
+    "Role": "Administrator",
+    "HomeBranchCode": "BR-003",
+    "IsActive": true,
+    "PasswordHash": "PBKDF2$100000$CXBMqGxXRNAbgchZk2zHZA==$Pu38WljeYYPqfjBhfo92GXS0GJN3CXFHBtIJ44XlGRQ="
+  },
+  {
+    "Id": 3,
+    "Name": "Riley Auditor",
+    "Email": "auditor@apexpost.local",
+    "Role": "Auditor",
+    "HomeBranchCode": "BR-001",
+    "IsActive": true,
+    "PasswordHash": "PBKDF2$100000$ozNg6QPAFAV4fsrFcQPiSg==$TJ1ktc3GcCRfq5Psg11Tnla3SeNwYgMNqE9Cm+OV1LY="
+  },
+  {
+    "Id": 4,
+    "Name": "Morgan Compliance",
+    "Email": "compliance.auditor@apexpost.local",
+    "Role": "Auditor",
+    "HomeBranchCode": "BR-003",
+    "IsActive": true,
+    "PasswordHash": "PBKDF2$100000$d+XqtiIt9TlxJBTbae2zTQ==$QKardjd4NnZ2iGo1YBZ3GL5BX1JNpQXAlaTU6k1ZmaY="
+  },
+  {
+    "Id": 5,
+    "Name": "Casey Review",
+    "Email": "review.auditor@apexpost.local",
+    "Role": "Auditor",
+    "HomeBranchCode": "BR-004",
+    "IsActive": true,
+    "PasswordHash": "PBKDF2$100000$epU5eevKmG2dU2RqAzvHxQ==$NYlnfDmg5uQ2GDnMaWSXlwo3X8M1D8lpHAaQMp/UEOU="
+  },
+  {
+    "Id": 6,
+    "Name": "Priya Sharma",
+    "Email": "manager.br001@apexpost.local",
+    "Role": "BranchManager",
+    "HomeBranchCode": "BR-001",
+    "IsActive": true,
+    "PasswordHash": "PBKDF2$100000$3vxPIs+dx4ZGdrhR67Dp0Q==$HeG/06HGcYGEf/KpePFjhXJrmLq+NOQbe1BEUAp/dAY="
+  },
+  {
+    "Id": 7,
+    "Name": "Liam Rossi",
+    "Email": "clerk.br001a@apexpost.local",
+    "Role": "CounterClerk",
+    "HomeBranchCode": "BR-001",
+    "IsActive": true,
+    "PasswordHash": "PBKDF2$100000$cZcsbbOw/SHSGlheKiweQg==$4EuwPX4//ofgPO+7FwZq6Szo9J4Xqqr9TfY+BDNH+Ms="
+  },
+  {
+    "Id": 8,
+    "Name": "Mei Wilson",
+    "Email": "clerk.br001b@apexpost.local",
+    "Role": "CounterClerk",
+    "HomeBranchCode": "BR-001",
+    "IsActive": true,
+    "PasswordHash": "PBKDF2$100000$Pa2tPnCIRfxEVW29X6mTBg==$AC7ZakHUeRJipE0dCfEiLtphxVm46zNmBasC22I42iw="
+  },
+  {
+    "Id": 9,
+    "Name": "Noah Smith",
+    "Email": "manager.br002@apexpost.local",
+    "Role": "BranchManager",
+    "HomeBranchCode": "BR-002",
+    "IsActive": true,
+    "PasswordHash": "PBKDF2$100000$io6/PT+dG376H257kN7MUA==$2z8BPp0jv03GHMvl9KV2SVPSgCWYxsMP1ev7Sk1eJmk="
+  },
+  {
+    "Id": 10,
+    "Name": "Aisha Silva",
+    "Email": "clerk.br002a@apexpost.local",
+    "Role": "CounterClerk",
+    "HomeBranchCode": "BR-002",
+    "IsActive": true,
+    "PasswordHash": "PBKDF2$100000$cD9wDOjXHw57LSzEf+PAGw==$zlZ0Wp00QrdcRfD6Pt2t3gle0rmSMJcdEDZMaW3m/dc="
+  },
+  {
+    "Id": 11,
+    "Name": "Oliver Ali",
+    "Email": "clerk.br002b@apexpost.local",
+    "Role": "CounterClerk",
+    "HomeBranchCode": "BR-002",
+    "IsActive": true,
+    "PasswordHash": "PBKDF2$100000$1l9wtwekEF8lWfToSppTrQ==$KcoxxsP15vXXxPIvsY30Bx2hEbBs1Grvqzrqoab2uko="
+  },
+  {
+    "Id": 12,
+    "Name": "Sofia Rossi",
+    "Email": "manager.br003@apexpost.local",
+    "Role": "BranchManager",
+    "HomeBranchCode": "BR-003",
+    "IsActive": true,
+    "PasswordHash": "PBKDF2$100000$VQWcRTjUmTuBX2p3pvqeMw==$nCipRjuZCnaoKzcXRkmVu7lSnftoGcy99S2NrMdYBHo="
+  },
+  {
+    "Id": 13,
+    "Name": "Ethan Taylor",
+    "Email": "clerk.br003a@apexpost.local",
+    "Role": "CounterClerk",
+    "HomeBranchCode": "BR-003",
+    "IsActive": true,
+    "PasswordHash": "PBKDF2$100000$KXZdY4w2z9SNpXAiDSeU6w==$I80J8YXng5Fxa2Bdl91XVRaOR7C4rktNiCalaxPgoT0="
+  },
+  {
+    "Id": 14,
+    "Name": "Hana Patel",
+    "Email": "clerk.br003b@apexpost.local",
+    "Role": "CounterClerk",
+    "HomeBranchCode": "BR-003",
+    "IsActive": true,
+    "PasswordHash": "PBKDF2$100000$B0eOJuXjCRrcIxrUtza8aA==$GBLj36BqhCyz/gBjCZ1Q8BE4+DgARdFav7esjwEVeWw="
+  },
+  {
+    "Id": 15,
+    "Name": "Lucas Silva",
+    "Email": "manager.br004@apexpost.local",
+    "Role": "BranchManager",
+    "HomeBranchCode": "BR-004",
+    "IsActive": true,
+    "PasswordHash": "PBKDF2$100000$ycIgbQwm7VmK/QIGZLi+Bw==$w2CsxVJi8dgustx8SKtf3M2hOEroXX+kP2zQU/bCAjw="
+  },
+  {
+    "Id": 16,
+    "Name": "Zara Nguyen",
+    "Email": "clerk.br004a@apexpost.local",
+    "Role": "CounterClerk",
+    "HomeBranchCode": "BR-004",
+    "IsActive": true,
+    "PasswordHash": "PBKDF2$100000$M8izjA6a9fcOgfbEisxNPg==$vB8kTR4KXY//av7qoGyhAMf/xAjbSd26f6CJF+IqIfs="
+  },
+  {
+    "Id": 17,
+    "Name": "Mateo Chen",
+    "Email": "clerk.br004b@apexpost.local",
+    "Role": "CounterClerk",
+    "HomeBranchCode": "BR-004",
+    "IsActive": true,
+    "PasswordHash": "PBKDF2$100000$fbri+al+23VUJ8V5j5BmIw==$B1f4j9zq5RRVG5ktbLg169buPsRBG0JHavS4DwP6v0s="
+  },
+  {
+    "Id": 18,
+    "Name": "Chloe Taylor",
+    "Email": "manager.br005@apexpost.local",
+    "Role": "BranchManager",
+    "HomeBranchCode": "BR-005",
+    "IsActive": true,
+    "PasswordHash": "PBKDF2$100000$1avwfuhVLWOgx0Wl545kQw==$ptwqOh+nvuIUmF6P2CQNk7rilxIuK7M6nVOOLVsMzCA="
+  },
+  {
+    "Id": 19,
+    "Name": "Ravi Khan",
+    "Email": "clerk.br005a@apexpost.local",
+    "Role": "CounterClerk",
+    "HomeBranchCode": "BR-005",
+    "IsActive": true,
+    "PasswordHash": "PBKDF2$100000$egVU22oPCEzeXzgH4FzAXA==$5DGkbvCpl0QW/wzyRRvdvwSQPONWe7kp7NQmChV7shQ="
+  },
+  {
+    "Id": 20,
+    "Name": "Priya Brown",
+    "Email": "clerk.br005b@apexpost.local",
+    "Role": "CounterClerk",
+    "HomeBranchCode": "BR-005",
+    "IsActive": true,
+    "PasswordHash": "PBKDF2$100000$3XlNIs5grpASr07Qq7CNZg==$mt1g0M0YZnMQ6giGUD+7ahonJ9VYO81WFs823VZomGc="
+  },
+  {
+    "Id": 21,
+    "Name": "Liam Nguyen",
+    "Email": "manager.br006@apexpost.local",
+    "Role": "BranchManager",
+    "HomeBranchCode": "BR-006",
+    "IsActive": true,
+    "PasswordHash": "PBKDF2$100000$4RNgPAv76P+swHrSV+1wNw==$xArh8MoP88ATzuaXyFqG9lysA/2ZJ/yGupjuUpRqs3M="
+  },
+  {
+    "Id": 22,
+    "Name": "Mei Wilson",
+    "Email": "clerk.br006a@apexpost.local",
+    "Role": "CounterClerk",
+    "HomeBranchCode": "BR-006",
+    "IsActive": true,
+    "PasswordHash": "PBKDF2$100000$O5dMYZslJ3kzQfz637oWZg==$98M7mBe7dWQM/0R5Ew61M27HZCgTfs9p1vM5iLOVz+U="
+  },
+  {
+    "Id": 23,
+    "Name": "Noah Sato",
+    "Email": "clerk.br006b@apexpost.local",
+    "Role": "CounterClerk",
+    "HomeBranchCode": "BR-006",
+    "IsActive": true,
+    "PasswordHash": "PBKDF2$100000$08NH1yl4GUORdSyHHkI+mQ==$xkRZv8AT1/bbWErWLkED0q+MPrURzM1O2QAd/inZXxQ="
+  },
+  {
+    "Id": 24,
+    "Name": "Sam Former",
+    "Email": "former.clerk@apexpost.local",
+    "Role": "CounterClerk",
+    "HomeBranchCode": "BR-002",
+    "IsActive": false,
+    "PasswordHash": "PBKDF2$100000$iO8a8/lUHDryGTU7lIB2Eg==$Ln0nIbxJlcYfZehAWufRRDJ2pggz9xRbzhyUsaGLH5Y="
+  }
+]

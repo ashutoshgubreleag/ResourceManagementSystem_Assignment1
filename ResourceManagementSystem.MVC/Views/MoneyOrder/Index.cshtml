@@ -1,35 +1,35 @@
-@model List<ResourceManagementSystem.Database.Models.MoneyOrderEntity>
+@model IReadOnlyList<MoneyOrderEntity>
 @{
     ViewData["Title"] = "Money orders";
 }
-
-<div class="d-flex justify-content-between align-items-center mb-3">
-    <h2>Money orders</h2>
-    <a asp-action="Create" class="btn btn-primary">Create money order</a>
+<div class="page-head">
+    <div>
+        <h1>Money orders</h1>
+        <p class="lead">Money orders are sold inside a counter transaction. Start a transaction, then add the money order and, above the threshold, a passed identity verification.</p>
+    </div>
+    @if (User.StaffRole is StaffRole.CounterClerk or StaffRole.BranchManager)
+    {
+        <a class="btn brand" asp-controller="Transaction" asp-action="Create">New counter transaction</a>
+    }
 </div>
-
-<table class="table table-striped table-bordered">
-    <thead>
-        <tr>
-            <th>Id</th>
-            <th>Branch</th>
-            <th>Sender</th>
-            <th>Recipient</th>
-            <th>Amount</th>
-            <th>Status</th>
-        </tr>
-    </thead>
-    <tbody>
-        @foreach (var item in Model)
-        {
-            <tr>
-                <td>@item.Id</td>
-                <td>@item.BranchCode</td>
-                <td>@item.Sender</td>
-                <td>@item.Recipient</td>
-                <td>@item.Amount</td>
-                <td>@item.Status</td>
-            </tr>
-        }
-    </tbody>
-</table>
+<div class="card table-wrap">
+    <table>
+        <thead><tr><th>Serial</th><th>Branch</th><th>Created (UTC)</th><th>Sender</th><th>Recipient</th><th class="num">Amount</th><th class="num">Fee</th><th>ID check</th><th>Status</th></tr></thead>
+        <tbody>
+            @foreach (var m in Model)
+            {
+                <tr>
+                    <td class="mono"><a asp-controller="Transaction" asp-action="Details" asp-route-id="@m.TransactionId">@m.SerialNumber</a></td>
+                    <td class="mono">@m.BranchCode</td>
+                    <td>@m.CreatedAt.ToString("dd MMM HH:mm")</td>
+                    <td>@m.Sender</td>
+                    <td>@m.Recipient</td>
+                    <td class="num">@m.Amount</td>
+                    <td class="num">@m.Fee</td>
+                    <td>@(m.IdentityVerificationId is int v ? $"#{v}" : "–")</td>
+                    <td><span class="badge @(m.Status == MoneyOrderStatus.Issued ? "ok" : m.Status == MoneyOrderStatus.Pending ? "info" : "bad")">@m.Status</span></td>
+                </tr>
+            }
+        </tbody>
+    </table>
+</div>

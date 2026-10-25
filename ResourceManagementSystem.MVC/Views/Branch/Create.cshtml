@@ -1,38 +1,7 @@
-@model ResourceManagementSystem.Database.Models.BranchEntity
+@model BranchFormViewModel
 @{
     ViewData["Title"] = "Add branch";
 }
-
-<h2>Add branch</h2>
-
-<form asp-action="Create" method="post">
-    <div asp-validation-summary="All" class="text-danger"></div>
-
-    <div class="mb-3">
-        <label asp-for="BranchCode" class="form-label"></label>
-        <input asp-for="BranchCode" class="form-control" />
-    </div>
-
-    <div class="mb-3">
-        <label asp-for="Name" class="form-label"></label>
-        <input asp-for="Name" class="form-control" />
-    </div>
-
-    <div class="mb-3">
-        <label asp-for="Region" class="form-label"></label>
-        <input asp-for="Region" class="form-control" />
-    </div>
-
-    <div class="mb-3">
-        <label asp-for="OpeningHours" class="form-label"></label>
-        <input asp-for="OpeningHours" class="form-control" />
-    </div>
-
-    <div class="mb-3">
-        <label asp-for="Status" class="form-label"></label>
-        <select asp-for="Status" class="form-select" asp-items="Html.GetEnumSelectList<ResourceManagementSystem.Database.Models.BranchStatus>()"></select>
-    </div>
-
-    <button type="submit" class="btn btn-primary">Save branch</button>
-    <a asp-action="Index" class="btn btn-secondary">Cancel</a>
-</form>
+<h1>Add branch</h1>
+<p class="lead">New branches open as Active with the requested number of counter terminals.</p>
+<partial name="_BranchForm" model="Model" />

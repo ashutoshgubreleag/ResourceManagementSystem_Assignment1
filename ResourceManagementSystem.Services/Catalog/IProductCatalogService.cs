@@ -1,9 +1,16 @@
 using ResourceManagementSystem.Database.Models;
+using ResourceManagementSystem.Models.ValueObjects;
 
 namespace ResourceManagementSystem.Services.Catalog;
 
+/// <summary>One catalogue row with the stock position at a branch.</summary>
+public sealed record CatalogueItem(ProductEntity Product, int QuantityOnHand, int ReorderThreshold, bool IsLowStock);
+
 public interface IProductCatalogService
 {
-    IEnumerable<ProductEntity> GetProducts();
-    IEnumerable<BranchStockEntity> GetAllStock();
+    Task<IReadOnlyList<ProductEntity>> GetProductsAsync(CancellationToken cancellationToken);
+
+    Task<ProductEntity?> FindProductAsync(Sku sku, CancellationToken cancellationToken);
+
+    Task<IReadOnlyList<CatalogueItem>> GetCatalogueForBranchAsync(BranchCode branch, ProductCategory? category, CancellationToken cancellationToken);
 }

@@ -1,122 +1,77 @@
 {
   "info": {
-    "name": "ApexPost Demo API and MVC Requests",
-    "description": "Sample requests for the ApexPost MVC app: login, dashboard access, catalog overview, shipping validation, reporting, and protected integration access.",
-    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
-    "_postman_id": "f4d9c65c-6b6c-4d44-bab8-ec1d66c6715c"
+    "name": "ApexPost Counter Platform",
+    "description": "Sample requests for the ApexPost Counter Platform (Week 2). Set baseUrl and apiKey in the collection variables. Staff pages use cookie auth + antiforgery tokens: sign in with a browser for those; the integration API uses X-Api-Key.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
   },
+  "variable": [
+    { "key": "baseUrl", "value": "https://localhost:7052" },
+    { "key": "apiKey", "value": "<set with dotnet user-secrets, paste here>" },
+    { "key": "trackingNumber", "value": "APX000000000" }
+  ],
   "item": [
     {
-      "name": "Login as Administrator",
-      "request": {
-        "method": "POST",
-        "header": [
-          {
-            "key": "Content-Type",
-            "value": "application/x-www-form-urlencoded"
-          }
-        ],
-        "body": {
-          "mode": "urlencoded",
-          "urlencoded": [
-            { "key": "Email", "value": "admin@apexpost.local" },
-            { "key": "Password", "value": "ApexPost123!" }
-          ]
-        },
-        "url": {
-          "raw": "https://localhost:5001/Account/Login",
-          "protocol": "https",
-          "host": ["localhost:5001"],
-          "path": ["Account", "Login"]
-        }
-      },
-      "response": []
+      "name": "Health",
+      "request": { "method": "GET", "url": "{{baseUrl}}/health" }
     },
     {
-      "name": "View Home Dashboard",
+      "name": "Integration - parcel status without key (expect 401)",
       "request": {
         "method": "GET",
-        "header": [],
-        "url": {
-          "raw": "https://localhost:5001/",
-          "protocol": "https",
-          "host": ["localhost:5001"],
-          "path": []
-        }
-      },
-      "response": []
+        "header": [ { "key": "X-Correlation-Id", "value": "postman-401" } ],
+        "url": "{{baseUrl}}/integration/parcel-status/{{trackingNumber}}"
+      }
     },
     {
-      "name": "List Branches",
-      "request": {
-        "method": "GET",
-        "header": [],
-        "url": {
-          "raw": "https://localhost:5001/Branch",
-          "protocol": "https",
-          "host": ["localhost:5001"],
-          "path": ["Branch"]
-        }
-      },
-      "response": []
-    },
-    {
-      "name": "List Catalog",
-      "request": {
-        "method": "GET",
-        "header": [],
-        "url": {
-          "raw": "https://localhost:5001/Catalog",
-          "protocol": "https",
-          "host": ["localhost:5001"],
-          "path": ["Catalog"]
-        }
-      },
-      "response": []
-    },
-    {
-      "name": "Shipping Pricing Check",
-      "request": {
-        "method": "GET",
-        "header": [],
-        "url": {
-          "raw": "https://localhost:5001/Shipping",
-          "protocol": "https",
-          "host": ["localhost:5001"],
-          "path": ["Shipping"]
-        }
-      },
-      "response": []
-    },
-    {
-      "name": "Protected Integration Call",
+      "name": "Integration - parcel status with key (200 / 404)",
       "request": {
         "method": "GET",
         "header": [
-          { "key": "x-api-key", "value": "ApexPost-Partner-Key-2026" }
+          { "key": "X-Api-Key", "value": "{{apiKey}}" },
+          { "key": "X-Correlation-Id", "value": "postman-ok" }
         ],
-        "url": {
-          "raw": "https://localhost:5001/Integration/Partner",
-          "protocol": "https",
-          "host": ["localhost:5001"],
-          "path": ["Integration", "Partner"]
-        }
-      },
-      "response": []
+        "url": "{{baseUrl}}/integration/parcel-status/{{trackingNumber}}"
+      }
     },
     {
-      "name": "View Reports",
+      "name": "Integration - slow courier (expect 503 after timeout)",
       "request": {
         "method": "GET",
-        "header": [],
-        "url": {
-          "raw": "https://localhost:5001/Report",
-          "protocol": "https",
-          "host": ["localhost:5001"],
-          "path": ["Report"]
-        }
-      },
-      "response": []
+        "header": [ { "key": "X-Api-Key", "value": "{{apiKey}}" } ],
+        "url": "{{baseUrl}}/integration/parcel-status/APX261020999"
+      }
+    },
+    {
+      "name": "Integration - CORS preflight from partner widget origin",
+      "request": {
+        "method": "OPTIONS",
+        "header": [
+          { "key": "Origin", "value": "https://track.swiftcourier.example" },
+          { "key": "Access-Control-Request-Method", "value": "GET" },
+          { "key": "Access-Control-Request-Headers", "value": "x-api-key" }
+        ],
+        "url": "{{baseUrl}}/integration/parcel-status/{{trackingNumber}}"
+      }
+    },
+    {
+      "name": "Login page (GET; copy __RequestVerificationToken for a POST)",
+      "request": { "method": "GET", "url": "{{baseUrl}}/Account/Login" }
+    },
+    {
+      "name": "Report - daily sales JSON (needs auth cookie)",
+      "request": { "method": "GET", "url": "{{baseUrl}}/Report/DailySales?format=json" }
+    },
+    {
+      "name": "Report - shipping volume JSON (needs auth cookie)",
+      "request": { "method": "GET", "url": "{{baseUrl}}/Report/ShippingVolume?from=2026-10-01&to=2026-10-31&format=json" }
+    },
+    {
+      "name": "Report - low stock JSON (needs auth cookie)",
+      "request": { "method": "GET", "url": "{{baseUrl}}/Report/LowStock?threshold=8&format=json" }
+    },
+    {
+      "name": "Branch summary JSON (needs auth cookie)",
+      "request": { "method": "GET", "url": "{{baseUrl}}/Branch/Summary/BR-001" }
     }
   ]
 }

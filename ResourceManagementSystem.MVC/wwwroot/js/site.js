@@ -1,4 +1,9 @@
-﻿// Please see documentation at https://learn.microsoft.com/aspnet/core/client-side/bundling-and-minification
-// for details on configuring this project to bundle and minify static web assets.
-
-// Write your JavaScript code.
+// ApexPost: progressive enhancement only (CSP allows same-origin scripts, no inline handlers).
+// Buttons with data-confirm ask before submitting (voids, refunds, deactivation).
+document.addEventListener("submit", function (event) {
+    var button = event.submitter;
+    var message = button && button.getAttribute("data-confirm");
+    if (message && !window.confirm(message)) {
+        event.preventDefault();
+    }
+});

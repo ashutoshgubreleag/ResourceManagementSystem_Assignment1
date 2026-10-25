@@ -1,46 +1,31 @@
-using System;
+using System.Globalization;
 
 namespace ResourceManagementSystem.Models.ValueObjects;
 
-public readonly record struct Money(decimal Amount, string Currency = "AUD")
+/// <summary>
+/// Monetary amount in the platform currency (AUD). Value object: equality is by amount and
+/// every operation returns a new instance. ApexPost trades in one currency, so there is no
+/// currency code to mismatch; rounding lives in <see cref="MoneyExtensions"/>.
+/// </summary>
+public readonly record struct Money(decimal Amount) : IComparable<Money>
 {
-    public static Money Zero(string currency = "AUD") => new(0m, currency);
+    public static Money Zero { get; } = new(0m);
 
-    public Money RoundToCurrency()
-    {
-        var rounded = Math.Round(Amount, 2, MidpointRounding.AwayFromZero);
-        return new Money(rounded, Currency);
-    }
+    public static Money operator +(Money left, Money right) => new(left.Amount + right.Amount);
+    public static Money operator -(Money left, Money right) => new(left.Amount - right.Amount);
+    public static Money operator *(Money money, decimal factor) => new(money.Amount * factor);
+    public static Money operator *(Money money, int quantity) => new(money.Amount * quantity);
+    public static bool operator >(Money left, Money right) => left.Amount > right.Amount;
+    public static bool operator <(Money left, Money right) => left.Amount < right.Amount;
+    public static bool operator >=(Money left, Money right) => left.Amount >= right.Amount;
+    public static bool operator <=(Money left, Money right) => left.Amount <= right.Amount;
 
-    public Money Add(Money other)
-    {
-        EnsureSameCurrency(other);
-        return new Money(RoundToTwoDecimalPlaces(Amount + other.Amount), Currency);
-    }
+    public int CompareTo(Money other) => Amount.CompareTo(other.Amount);
 
-    public Money Subtract(Money other)
-    {
-        EnsureSameCurrency(other);
-        return new Money(RoundToTwoDecimalPlaces(Amount - other.Amount), Currency);
-    }
+    public static Money Max(Money left, Money right) => left >= right ? left : right;
 
-    public Money Multiply(decimal multiplier)
-    {
-        if (multiplier < 0m)
-            throw new ArgumentOutOfRangeException(nameof(multiplier), "Multiplier cannot be negative.");
-
-        return new Money(RoundToTwoDecimalPlaces(Amount * multiplier), Currency);
-    }
-
-    public decimal ToDecimal() => Amount;
-
-    public override string ToString() => $"{Amount:0.00} {Currency}";
-
-    private static decimal RoundToTwoDecimalPlaces(decimal value) => Math.Round(value, 2, MidpointRounding.AwayFromZero);
-
-    private void EnsureSameCurrency(Money other)
-    {
-        if (!string.Equals(Currency, other.Currency, StringComparison.OrdinalIgnoreCase))
-            throw new InvalidOperationException("Cannot operate on money with different currencies.");
-    }
+    public override string ToString() =>
+        Amount < 0
+            ? "-$" + (-Amount).ToString("0.00", CultureInfo.InvariantCulture)
+            : "$" + Amount.ToString("0.00", CultureInfo.InvariantCulture);
 }

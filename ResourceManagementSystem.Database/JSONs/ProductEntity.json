@@ -1,272 +1,290 @@
 [
-    {
-        "Id":  1,
-        "Name":  "Express Mailer Pack",
-        "Sku":  "PKG-001",
-        "TaxCategory":  0,
-        "UnitPrice":  5.5,
-        "Category":  0,
-        "IsActive":  true
-    },
-    {
-        "Id":  2,
-        "Name":  "Priority Box Small",
-        "Sku":  "PKG-002",
-        "TaxCategory":  0,
-        "UnitPrice":  8.25,
-        "Category":  0,
-        "IsActive":  true
-    },
-    {
-        "Id":  3,
-        "Name":  "Priority Box Medium",
-        "Sku":  "PKG-003",
-        "TaxCategory":  0,
-        "UnitPrice":  11.75,
-        "Category":  0,
-        "IsActive":  true
-    },
-    {
-        "Id":  4,
-        "Name":  "Priority Box Large",
-        "Sku":  "PKG-004",
-        "TaxCategory":  0,
-        "UnitPrice":  15.9,
-        "Category":  0,
-        "IsActive":  true
-    },
-    {
-        "Id":  5,
-        "Name":  "Bubble Wrap Roll",
-        "Sku":  "PKG-005",
-        "TaxCategory":  0,
-        "UnitPrice":  7.45,
-        "Category":  0,
-        "IsActive":  true
-    },
-    {
-        "Id":  6,
-        "Name":  "Packing Tape 50m",
-        "Sku":  "PKG-006",
-        "TaxCategory":  0,
-        "UnitPrice":  6.3,
-        "Category":  0,
-        "IsActive":  true
-    },
-    {
-        "Id":  7,
-        "Name":  "Ledger Notebook A4",
-        "Sku":  "STN-001",
-        "TaxCategory":  0,
-        "UnitPrice":  4.8,
-        "Category":  1,
-        "IsActive":  true
-    },
-    {
-        "Id":  8,
-        "Name":  "Business Folder Set",
-        "Sku":  "STN-002",
-        "TaxCategory":  0,
-        "UnitPrice":  9.2,
-        "Category":  1,
-        "IsActive":  true
-    },
-    {
-        "Id":  9,
-        "Name":  "Desk Organizer",
-        "Sku":  "STN-003",
-        "TaxCategory":  0,
-        "UnitPrice":  18.4,
-        "Category":  1,
-        "IsActive":  true
-    },
-    {
-        "Id":  10,
-        "Name":  "Signature Pen Pack",
-        "Sku":  "STN-004",
-        "TaxCategory":  0,
-        "UnitPrice":  12.6,
-        "Category":  1,
-        "IsActive":  true
-    },
-    {
-        "Id":  11,
-        "Name":  "Sticky Notes Bundle",
-        "Sku":  "STN-005",
-        "TaxCategory":  0,
-        "UnitPrice":  3.9,
-        "Category":  1,
-        "IsActive":  true
-    },
-    {
-        "Id":  12,
-        "Name":  "Document Pouch",
-        "Sku":  "STN-006",
-        "TaxCategory":  0,
-        "UnitPrice":  6.1,
-        "Category":  1,
-        "IsActive":  true
-    },
-    {
-        "Id":  13,
-        "Name":  "A4 Copy Paper Ream",
-        "Sku":  "OFF-001",
-        "TaxCategory":  1,
-        "UnitPrice":  14.25,
-        "Category":  2,
-        "IsActive":  true
-    },
-    {
-        "Id":  14,
-        "Name":  "Printing Ink Cartridge",
-        "Sku":  "OFF-002",
-        "TaxCategory":  1,
-        "UnitPrice":  34,
-        "Category":  2,
-        "IsActive":  true
-    },
-    {
-        "Id":  15,
-        "Name":  "Monochrome Toner",
-        "Sku":  "OFF-003",
-        "TaxCategory":  1,
-        "UnitPrice":  42.5,
-        "Category":  2,
-        "IsActive":  true
-    },
-    {
-        "Id":  16,
-        "Name":  "Bulletin Board Kit",
-        "Sku":  "OFF-004",
-        "TaxCategory":  1,
-        "UnitPrice":  27.8,
-        "Category":  2,
-        "IsActive":  true
-    },
-    {
-        "Id":  17,
-        "Name":  "Executive Desk Pad",
-        "Sku":  "OFF-005",
-        "TaxCategory":  1,
-        "UnitPrice":  22,
-        "Category":  2,
-        "IsActive":  true
-    },
-    {
-        "Id":  18,
-        "Name":  "Label Printer Tape",
-        "Sku":  "OFF-006",
-        "TaxCategory":  1,
-        "UnitPrice":  11.5,
-        "Category":  2,
-        "IsActive":  true
-    },
-    {
-        "Id":  19,
-        "Name":  "Glassine Mailer",
-        "Sku":  "PKG-007",
-        "TaxCategory":  0,
-        "UnitPrice":  6.85,
-        "Category":  0,
-        "IsActive":  true
-    },
-    {
-        "Id":  20,
-        "Name":  "Document Envelopes",
-        "Sku":  "PKG-008",
-        "TaxCategory":  0,
-        "UnitPrice":  8.1,
-        "Category":  0,
-        "IsActive":  true
-    },
-    {
-        "Id":  21,
-        "Name":  "Customer Receipt Book",
-        "Sku":  "STN-007",
-        "TaxCategory":  0,
-        "UnitPrice":  13.2,
-        "Category":  1,
-        "IsActive":  true
-    },
-    {
-        "Id":  22,
-        "Name":  "Transaction Register Ledger",
-        "Sku":  "STN-008",
-        "TaxCategory":  0,
-        "UnitPrice":  16.75,
-        "Category":  1,
-        "IsActive":  true
-    },
-    {
-        "Id":  23,
-        "Name":  "Safety File Box",
-        "Sku":  "OFF-007",
-        "TaxCategory":  1,
-        "UnitPrice":  19.9,
-        "Category":  2,
-        "IsActive":  true
-    },
-    {
-        "Id":  24,
-        "Name":  "Office Chair Mat",
-        "Sku":  "OFF-008",
-        "TaxCategory":  1,
-        "UnitPrice":  29.95,
-        "Category":  2,
-        "IsActive":  true
-    },
-    {
-        "Id":  25,
-        "Name":  "Priority Shipping Kit",
-        "Sku":  "PKG-009",
-        "TaxCategory":  0,
-        "UnitPrice":  18.6,
-        "Category":  0,
-        "IsActive":  true
-    },
-    {
-        "Id":  26,
-        "Name":  "Cash Handling Envelope",
-        "Sku":  "PKG-010",
-        "TaxCategory":  0,
-        "UnitPrice":  4.15,
-        "Category":  0,
-        "IsActive":  true
-    },
-    {
-        "Id":  27,
-        "Name":  "Barcode Label Roll",
-        "Sku":  "STN-009",
-        "TaxCategory":  0,
-        "UnitPrice":  7.65,
-        "Category":  1,
-        "IsActive":  true
-    },
-    {
-        "Id":  28,
-        "Name":  "Desk Lamp",
-        "Sku":  "OFF-009",
-        "TaxCategory":  1,
-        "UnitPrice":  39.5,
-        "Category":  2,
-        "IsActive":  true
-    },
-    {
-        "Id":  29,
-        "Name":  "Portable Scanner",
-        "Sku":  "OFF-010",
-        "TaxCategory":  1,
-        "UnitPrice":  88,
-        "Category":  2,
-        "IsActive":  true
-    },
-    {
-        "Id":  30,
-        "Name":  "Secure Archive Box",
-        "Sku":  "STN-010",
-        "TaxCategory":  0,
-        "UnitPrice":  21.3,
-        "Category":  1,
-        "IsActive":  true
-    }
+  {
+    "Id": 1,
+    "Sku": "PKG-001",
+    "Name": "Small padded bag",
+    "Category": "Packaging",
+    "UnitPrice": 2.95,
+    "TaxCategory": "Standard",
+    "IsActive": true
+  },
+  {
+    "Id": 2,
+    "Sku": "PKG-002",
+    "Name": "Medium padded bag",
+    "Category": "Packaging",
+    "UnitPrice": 3.95,
+    "TaxCategory": "Standard",
+    "IsActive": true
+  },
+  {
+    "Id": 3,
+    "Sku": "PKG-003",
+    "Name": "Large padded bag",
+    "Category": "Packaging",
+    "UnitPrice": 4.95,
+    "TaxCategory": "Standard",
+    "IsActive": true
+  },
+  {
+    "Id": 4,
+    "Sku": "PKG-004",
+    "Name": "Small box (Size 1)",
+    "Category": "Packaging",
+    "UnitPrice": 2.5,
+    "TaxCategory": "Standard",
+    "IsActive": true
+  },
+  {
+    "Id": 5,
+    "Sku": "PKG-005",
+    "Name": "Medium box (Size 3)",
+    "Category": "Packaging",
+    "UnitPrice": 3.75,
+    "TaxCategory": "Standard",
+    "IsActive": true
+  },
+  {
+    "Id": 6,
+    "Sku": "PKG-006",
+    "Name": "Large box (Size 5)",
+    "Category": "Packaging",
+    "UnitPrice": 5.25,
+    "TaxCategory": "Standard",
+    "IsActive": true
+  },
+  {
+    "Id": 7,
+    "Sku": "PKG-007",
+    "Name": "Tube 1m",
+    "Category": "Packaging",
+    "UnitPrice": 6.5,
+    "TaxCategory": "Standard",
+    "IsActive": true
+  },
+  {
+    "Id": 8,
+    "Sku": "PKG-008",
+    "Name": "Bubble wrap roll 3m",
+    "Category": "Packaging",
+    "UnitPrice": 7.95,
+    "TaxCategory": "Standard",
+    "IsActive": true
+  },
+  {
+    "Id": 9,
+    "Sku": "PKG-009",
+    "Name": "Packing tape 50m",
+    "Category": "Packaging",
+    "UnitPrice": 4.5,
+    "TaxCategory": "Standard",
+    "IsActive": true
+  },
+  {
+    "Id": 10,
+    "Sku": "PKG-010",
+    "Name": "Prepaid satchel 500g",
+    "Category": "Packaging",
+    "UnitPrice": 11.0,
+    "TaxCategory": "Standard",
+    "IsActive": true
+  },
+  {
+    "Id": 11,
+    "Sku": "PKG-011",
+    "Name": "Prepaid satchel 3kg",
+    "Category": "Packaging",
+    "UnitPrice": 16.5,
+    "TaxCategory": "Standard",
+    "IsActive": true
+  },
+  {
+    "Id": 12,
+    "Sku": "STN-001",
+    "Name": "DL envelopes (pack of 25)",
+    "Category": "Stationery",
+    "UnitPrice": 4.25,
+    "TaxCategory": "Standard",
+    "IsActive": true
+  },
+  {
+    "Id": 13,
+    "Sku": "STN-002",
+    "Name": "C4 envelopes (pack of 10)",
+    "Category": "Stationery",
+    "UnitPrice": 5.5,
+    "TaxCategory": "Standard",
+    "IsActive": true
+  },
+  {
+    "Id": 14,
+    "Sku": "STN-003",
+    "Name": "Greeting card - Birthday",
+    "Category": "Stationery",
+    "UnitPrice": 5.95,
+    "TaxCategory": "Standard",
+    "IsActive": true
+  },
+  {
+    "Id": 15,
+    "Sku": "STN-004",
+    "Name": "Greeting card - Charity",
+    "Category": "Stationery",
+    "UnitPrice": 4.95,
+    "TaxCategory": "Exempt",
+    "IsActive": true
+  },
+  {
+    "Id": 16,
+    "Sku": "STN-005",
+    "Name": "Ballpoint pens (pack of 10)",
+    "Category": "Stationery",
+    "UnitPrice": 6.95,
+    "TaxCategory": "Standard",
+    "IsActive": true
+  },
+  {
+    "Id": 17,
+    "Sku": "STN-006",
+    "Name": "A5 notebook",
+    "Category": "Stationery",
+    "UnitPrice": 3.95,
+    "TaxCategory": "Reduced",
+    "IsActive": true
+  },
+  {
+    "Id": 18,
+    "Sku": "STN-007",
+    "Name": "Exercise book 96pg",
+    "Category": "Stationery",
+    "UnitPrice": 1.95,
+    "TaxCategory": "Reduced",
+    "IsActive": true
+  },
+  {
+    "Id": 19,
+    "Sku": "STN-008",
+    "Name": "Postcard set (6)",
+    "Category": "Stationery",
+    "UnitPrice": 7.5,
+    "TaxCategory": "Standard",
+    "IsActive": true
+  },
+  {
+    "Id": 20,
+    "Sku": "STN-009",
+    "Name": "Address labels (100)",
+    "Category": "Stationery",
+    "UnitPrice": 8.95,
+    "TaxCategory": "Standard",
+    "IsActive": true
+  },
+  {
+    "Id": 21,
+    "Sku": "OFF-001",
+    "Name": "A4 copy paper 500 sheets",
+    "Category": "OfficeSupplies",
+    "UnitPrice": 8.5,
+    "TaxCategory": "Standard",
+    "IsActive": true
+  },
+  {
+    "Id": 22,
+    "Sku": "OFF-002",
+    "Name": "Stapler",
+    "Category": "OfficeSupplies",
+    "UnitPrice": 12.95,
+    "TaxCategory": "Standard",
+    "IsActive": true
+  },
+  {
+    "Id": 23,
+    "Sku": "OFF-003",
+    "Name": "Staples (5000)",
+    "Category": "OfficeSupplies",
+    "UnitPrice": 3.5,
+    "TaxCategory": "Standard",
+    "IsActive": true
+  },
+  {
+    "Id": 24,
+    "Sku": "OFF-004",
+    "Name": "Lever arch file",
+    "Category": "OfficeSupplies",
+    "UnitPrice": 4.95,
+    "TaxCategory": "Standard",
+    "IsActive": true
+  },
+  {
+    "Id": 25,
+    "Sku": "OFF-005",
+    "Name": "Highlighters (4)",
+    "Category": "OfficeSupplies",
+    "UnitPrice": 5.95,
+    "TaxCategory": "Standard",
+    "IsActive": true
+  },
+  {
+    "Id": 26,
+    "Sku": "OFF-006",
+    "Name": "Sticky notes (12 pads)",
+    "Category": "OfficeSupplies",
+    "UnitPrice": 9.95,
+    "TaxCategory": "Standard",
+    "IsActive": true
+  },
+  {
+    "Id": 27,
+    "Sku": "OFF-007",
+    "Name": "USB flash drive 64GB",
+    "Category": "OfficeSupplies",
+    "UnitPrice": 19.95,
+    "TaxCategory": "Standard",
+    "IsActive": true
+  },
+  {
+    "Id": 28,
+    "Sku": "OFF-008",
+    "Name": "Printer ink black",
+    "Category": "OfficeSupplies",
+    "UnitPrice": 34.95,
+    "TaxCategory": "Standard",
+    "IsActive": true
+  },
+  {
+    "Id": 29,
+    "Sku": "OFF-009",
+    "Name": "Calculator",
+    "Category": "OfficeSupplies",
+    "UnitPrice": 14.95,
+    "TaxCategory": "Standard",
+    "IsActive": true
+  },
+  {
+    "Id": 30,
+    "Sku": "OFF-010",
+    "Name": "Scissors",
+    "Category": "OfficeSupplies",
+    "UnitPrice": 6.5,
+    "TaxCategory": "Standard",
+    "IsActive": true
+  },
+  {
+    "Id": 31,
+    "Sku": "OFF-011",
+    "Name": "Desk organiser",
+    "Category": "OfficeSupplies",
+    "UnitPrice": 17.95,
+    "TaxCategory": "Standard",
+    "IsActive": true
+  },
+  {
+    "Id": 32,
+    "Sku": "OFF-012",
+    "Name": "Document wallet (5)",
+    "Category": "OfficeSupplies",
+    "UnitPrice": 7.95,
+    "TaxCategory": "Reduced",
+    "IsActive": true
+  }
 ]

@@ -1,99 +1,164 @@
 using ResourceManagementSystem.Database.Models;
+using ResourceManagementSystem.Models.Exceptions;
+using ResourceManagementSystem.Models.Validation;
+using ResourceManagementSystem.Models.ValueObjects;
 using ResourceManagementSystem.Repositories;
+using ResourceManagementSystem.Repositories.Specifications;
+using ResourceManagementSystem.Services.Authentication;
+using ResourceManagementSystem.Services.Common;
 
 namespace ResourceManagementSystem.Services.Staff;
 
-public class StaffService : IStaffService
+public sealed class StaffService(
+    IBaseEntityRepository<StaffEntity> staff,
+    IBaseEntityRepository<BranchEntity> branches,
+    IPasswordHasher hasher) : IStaffService
 {
-    private readonly IBaseEntityRepository<StaffEntity> _staffRepository;
+    private const int MinimumPasswordLength = 10;
 
-    public StaffService(IBaseEntityRepository<StaffEntity> staffRepository)
+    public async Task<IReadOnlyList<StaffEntity>> GetAllAsync(StaffContext actor, CancellationToken cancellationToken)
     {
-        _staffRepository = staffRepository;
+        ArgumentNullException.ThrowIfNull(actor);
+        var spec = actor.IsAdministrator || actor.IsAuditor
+            ? Specification<StaffEntity>.All
+            : Specification<StaffEntity>.Where(s => s.HomeBranchCode == actor.BranchCode, "own branch");
+
+        var list = await staff.FindAsync(spec, cancellationToken).ConfigureAwait(false);
+        return list.OrderBy(s => s.HomeBranchCode.Value, StringComparer.Ordinal).ThenBy(s => s.Name, StringComparer.OrdinalIgnoreCase).ToList();
     }
 
-    public StaffEntity AddStaff(StaffEntity staff)
+    public async Task<StaffEntity> GetByIdAsync(int staffId, CancellationToken cancellationToken) =>
+        await staff.GetByIdAsync(staffId, cancellationToken).ConfigureAwait(false)
+        ?? throw new EntityNotFoundException("Staff member", staffId);
+
+    public async Task<StaffEntity> CreateAsync(SaveStaffCommand command, StaffContext actor, CancellationToken cancellationToken)
     {
-        ValidateStaff(staff);
+        ArgumentNullException.ThrowIfNull(command);
+        ReflectionValidator.EnsureValid(command);
+        var branch = new BranchCode(command.HomeBranchCode);
+        EnsureCanManage(actor, branch, command.Role);
+        await EnsureBranchExistsAsync(branch, cancellationToken).ConfigureAwait(false);
+        await EnsureEmailUniqueAsync(command.Email, 0, cancellationToken).ConfigureAwait(false);
 
-        var exists = _staffRepository.GetAll().Any(existing =>
-            string.Equals(existing.Email, staff.Email, StringComparison.OrdinalIgnoreCase));
+        if (command.InitialPassword is not { Length: >= MinimumPasswordLength })
+        {
+            throw new CommandValidationException(nameof(command.InitialPassword), $"Initial password must be at least {MinimumPasswordLength} characters.");
+        }
 
-        if (exists)
-            throw new InvalidOperationException($"A staff member with email '{staff.Email}' already exists.");
+        var entity = new StaffEntity
+        {
+            Name = command.Name,
+            Email = command.Email,
+            Role = command.Role,
+            HomeBranchCode = branch,
+            IsActive = command.IsActive,
+            PasswordHash = hasher.Hash(command.InitialPassword),
+        };
 
-        return _staffRepository.Add(staff);
+        return await staff.AddAsync(entity, cancellationToken).ConfigureAwait(false);
     }
 
-    public StaffEntity UpdateStaff(StaffEntity staff)
+    public async Task<StaffEntity> UpdateAsync(SaveStaffCommand command, StaffContext actor, CancellationToken cancellationToken)
     {
-        if (staff == null) throw new ArgumentNullException(nameof(staff));
-        ValidateStaff(staff);
+        ArgumentNullException.ThrowIfNull(command);
+        ReflectionValidator.EnsureValid(command);
 
-        var existing = GetById(staff.Id) ?? throw new InvalidOperationException("Staff member not found.");
-        var duplicate = _staffRepository.GetAll()
-            .Any(item => item.Id != staff.Id && string.Equals(item.Email, staff.Email, StringComparison.OrdinalIgnoreCase));
+        var existing = await GetByIdAsync(command.Id, cancellationToken).ConfigureAwait(false);
+        var branch = new BranchCode(command.HomeBranchCode);
+        EnsureCanManage(actor, existing.HomeBranchCode, existing.Role);
+        EnsureCanManage(actor, branch, command.Role);
+        await EnsureBranchExistsAsync(branch, cancellationToken).ConfigureAwait(false);
+        await EnsureEmailUniqueAsync(command.Email, command.Id, cancellationToken).ConfigureAwait(false);
 
-        if (duplicate)
-            throw new InvalidOperationException($"A staff member with email '{staff.Email}' already exists.");
+        if (existing.Id == actor.StaffId && !command.IsActive)
+        {
+            throw new BusinessRuleViolationException("SELF_DEACTIVATION", "You cannot deactivate your own account.");
+        }
 
-        existing.Name = staff.Name;
-        existing.Email = staff.Email;
-        existing.Role = staff.Role;
-        existing.HomeBranchCode = staff.HomeBranchCode;
-        existing.IsActive = staff.IsActive;
+        existing.Name = command.Name;
+        existing.Email = command.Email;
+        existing.Role = command.Role;
+        existing.HomeBranchCode = branch;
+        existing.IsActive = command.IsActive;
+        if (command.InitialPassword is { Length: > 0 } password)
+        {
+            existing.PasswordHash = password.Length >= MinimumPasswordLength
+                ? hasher.Hash(password)
+                : throw new CommandValidationException(nameof(command.InitialPassword), $"Password must be at least {MinimumPasswordLength} characters.");
+        }
 
-        var updated = _staffRepository.Update(existing);
-        if (!updated) throw new InvalidOperationException("Unable to update staff member.");
+        await staff.UpdateAsync(existing, cancellationToken).ConfigureAwait(false);
         return existing;
     }
 
-    public IEnumerable<StaffEntity> GetAll() => _staffRepository.GetAll();
-
-    public StaffEntity? GetById(int id) => _staffRepository.GetById(id);
-
-    public IEnumerable<StaffEntity> GetByBranch(string branchCode)
+    public async Task DeactivateAsync(int staffId, StaffContext actor, CancellationToken cancellationToken)
     {
-        if (string.IsNullOrWhiteSpace(branchCode)) return Enumerable.Empty<StaffEntity>();
-        return _staffRepository.GetAll()
-            .Where(staff => string.Equals(staff.HomeBranchCode, branchCode, StringComparison.OrdinalIgnoreCase));
-    }
+        var existing = await GetByIdAsync(staffId, cancellationToken).ConfigureAwait(false);
+        EnsureCanManage(actor, existing.HomeBranchCode, existing.Role);
+        if (existing.Id == actor.StaffId)
+        {
+            throw new BusinessRuleViolationException("SELF_DEACTIVATION", "You cannot deactivate your own account.");
+        }
 
-    public void DeactivateStaff(int staffId)
-    {
-        var staff = GetById(staffId) ?? throw new InvalidOperationException("Staff member not found.");
-        if (!staff.IsActive)
+        if (!existing.IsActive)
+        {
             return;
+        }
 
-        staff.IsActive = false;
-        var updated = _staffRepository.Update(staff);
-        if (!updated) throw new InvalidOperationException("Unable to deactivate staff member.");
+        existing.IsActive = false;
+        await staff.UpdateAsync(existing, cancellationToken).ConfigureAwait(false);
     }
 
-    public bool CanProcessTransaction(int staffId, string branchCode)
+    public async Task<StaffEntity> EnsureCanTransactAsync(StaffContext actor, BranchCode branch, CancellationToken cancellationToken)
     {
-        var staff = GetById(staffId);
-        if (staff == null || !staff.IsActive) return false;
-        return string.Equals(staff.HomeBranchCode, branchCode, StringComparison.OrdinalIgnoreCase);
+        ArgumentNullException.ThrowIfNull(actor);
+        var member = await staff.GetByIdAsync(actor.StaffId, cancellationToken).ConfigureAwait(false);
+
+        return member switch
+        {
+            null => throw new ForbiddenOperationException("Your staff record no longer exists."),
+            { IsActive: false } => throw new BusinessRuleViolationException("STAFF_INACTIVE", "Inactive staff cannot open or process transactions."),
+            { Role: not (StaffRole.CounterClerk or StaffRole.BranchManager) } =>
+                throw new ForbiddenOperationException("Only counter clerks and branch managers can process counter transactions."),
+            _ when member.HomeBranchCode != branch =>
+                throw new BusinessRuleViolationException("WRONG_BRANCH", $"You are assigned to {member.HomeBranchCode} and cannot transact at {branch}."),
+            _ => member,
+        };
     }
 
-    public bool CanVoidOrRefund(int staffId, string branchCode)
+    /// <summary>Administrators manage everyone; branch managers manage clerks at their own branch.</summary>
+    private static void EnsureCanManage(StaffContext actor, BranchCode branch, StaffRole targetRole)
     {
-        var staff = GetById(staffId);
-        if (staff == null || !staff.IsActive) return false;
-        if (!string.Equals(staff.HomeBranchCode, branchCode, StringComparison.OrdinalIgnoreCase)) return false;
-        return staff.Role == StaffRole.BranchManager;
+        ArgumentNullException.ThrowIfNull(actor);
+        var allowed = actor.Role switch
+        {
+            StaffRole.Administrator => true,
+            StaffRole.BranchManager => actor.BranchCode == branch && targetRole == StaffRole.CounterClerk,
+            _ => false,
+        };
+
+        if (!allowed)
+        {
+            throw new ForbiddenOperationException("You are not allowed to manage this staff member.");
+        }
     }
 
-    private static void ValidateStaff(StaffEntity staff)
+    private async Task EnsureBranchExistsAsync(BranchCode branch, CancellationToken cancellationToken)
     {
-        if (staff == null) throw new ArgumentNullException(nameof(staff));
-        if (string.IsNullOrWhiteSpace(staff.Name)) throw new InvalidOperationException("Staff name is required.");
-        if (string.IsNullOrWhiteSpace(staff.Email)) throw new InvalidOperationException("Staff email is required.");
-        if (string.IsNullOrWhiteSpace(staff.HomeBranchCode)) throw new InvalidOperationException("Home branch is required.");
+        var found = await branches.FindAsync(Specification<BranchEntity>.Where(b => b.BranchCode == branch), cancellationToken).ConfigureAwait(false);
+        if (found.Count == 0)
+        {
+            throw new CommandValidationException(nameof(SaveStaffCommand.HomeBranchCode), $"Branch {branch} does not exist.");
+        }
+    }
 
-        var validRoles = Enum.GetValues<StaffRole>();
-        if (!validRoles.Contains(staff.Role))
-            throw new InvalidOperationException("Invalid staff role selected.");
+    private async Task EnsureEmailUniqueAsync(string email, int ignoreId, CancellationToken cancellationToken)
+    {
+        var normalised = email.Trim().ToLowerInvariant();
+        var clash = await staff.FindAsync(Specification<StaffEntity>.Where(s => s.Email == normalised && s.Id != ignoreId), cancellationToken).ConfigureAwait(false);
+        if (clash.Count > 0)
+        {
+            throw new CommandValidationException(nameof(SaveStaffCommand.Email), $"A staff member with email '{normalised}' already exists.");
+        }
     }
 }

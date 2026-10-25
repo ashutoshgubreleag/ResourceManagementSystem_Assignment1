@@ -1,34 +1,26 @@
-using Microsoft.Extensions.Configuration;
 using ResourceManagementSystem.Database.Models;
 using ResourceManagementSystem.Repositories;
+using ResourceManagementSystem.Repositories.Specifications;
 
 namespace ResourceManagementSystem.Services.Authentication;
 
-public class AuthenticationService : IAuthenticationService
+public sealed class AuthenticationService(IBaseEntityRepository<StaffEntity> staff, IPasswordHasher hasher) : IAuthenticationService
 {
-    private readonly IBaseEntityRepository<StaffEntity> _staffRepository;
-    private readonly IConfiguration _configuration;
-
-    public AuthenticationService(
-        IBaseEntityRepository<StaffEntity> staffRepository,
-        IConfiguration configuration)
+    public async Task<StaffEntity?> AuthenticateAsync(string email, string password, CancellationToken cancellationToken)
     {
-        _staffRepository = staffRepository;
-        _configuration = configuration;
-    }
-
-    public StaffEntity? AuthenticateStaff(string email, string password)
-    {
-        if (string.IsNullOrWhiteSpace(email) || string.IsNullOrWhiteSpace(password))
+        if (string.IsNullOrWhiteSpace(email) || string.IsNullOrEmpty(password))
         {
             return null;
         }
 
-        var configuredPassword = _configuration["Authentication:DemoPassword"] ?? "ApexPost123!";
+        var normalised = email.Trim().ToLowerInvariant();
+        var matches = await staff.FindAsync(Specification<StaffEntity>.Where(s => s.Email == normalised), cancellationToken).ConfigureAwait(false);
+        var candidate = matches.FirstOrDefault();
 
-        return _staffRepository.GetAll().FirstOrDefault(staff =>
-            staff.IsActive
-            && string.Equals(staff.Email, email, StringComparison.OrdinalIgnoreCase)
-            && string.Equals(password, configuredPassword, StringComparison.Ordinal));
+        // Always run the hash (dummy hash for unknown users) to avoid a timing side channel.
+        var passwordOk = hasher.Verify(password, candidate?.PasswordHash ?? string.Empty);
+
+        // Inactive staff cannot sign in at all.
+        return passwordOk && candidate is { IsActive: true } ? candidate : null;
     }
 }

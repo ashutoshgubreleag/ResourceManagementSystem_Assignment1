@@ -1,0 +1,13 @@
+@* CSP-safe validation summary: the built-in tag helper emits <li style="display:none">, which a
+   strict style-src 'self' policy blocks. This renders nothing at all when the model is valid. *@
+@if (!ViewData.ModelState.IsValid)
+{
+    <div class="validation-summary-errors" role="alert">
+        <ul>
+            @foreach (var error in ViewData.ModelState.Values.SelectMany(v => v.Errors))
+            {
+                <li>@error.ErrorMessage</li>
+            }
+        </ul>
+    </div>
+}

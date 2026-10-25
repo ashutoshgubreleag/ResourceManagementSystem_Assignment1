@@ -1,129 +1,96 @@
-﻿
-using Microsoft.AspNetCore.Http;
-using Microsoft.Extensions.Configuration;
-using Microsoft.Extensions.Logging;
 using System.Net;
+using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
+using ResourceManagementSystem.Utilities.Options;
 
-namespace ResourceManagementSystem.Utilities;
+namespace ResourceManagementSystem.Utilities.Middleware;
 
 /// <summary>
-/// Restricts configured administrative and integration endpoints
-/// to clients whose IP addresses appear in the configured allowlist.
+/// Allows admin and integration endpoints only from allowlisted addresses (single IPs or CIDR
+/// ranges) and returns 403 otherwise. An endpoint is protected if its path starts with a configured
+/// prefix or it carries <see cref="IpRestrictedAttribute"/>.
+///
+/// <para><b>Proxy risk:</b> this reads <c>Connection.RemoteIpAddress</c> only, never
+/// <c>X-Forwarded-For</c> directly, because that header is set by the client and trivially spoofed.
+/// Behind a reverse proxy, enable <c>ForwardedHeaders</c> with <c>KnownProxies</c>/<c>KnownNetworks</c>
+/// set to the proxy's addresses: the framework then rewrites RemoteIpAddress only for requests that
+/// really came through that proxy. Without that, every request appears to come from the proxy.</para>
 /// </summary>
-/// <remarks>
-/// RemoteIpAddress is only trustworthy when the application is directly
-/// exposed to clients or forwarded headers are configured to trust only
-/// known reverse proxies. Never trust arbitrary X-Forwarded-For values.
-/// </remarks>
-public sealed class IpRestrictionMiddleware
+public sealed partial class IpRestrictionMiddleware
 {
     private readonly RequestDelegate _next;
     private readonly ILogger<IpRestrictionMiddleware> _logger;
     private readonly bool _enabled;
-    private readonly HashSet<IPAddress> _allowedIPs;
-    private readonly PathString[] _protectedPaths;
+    private readonly IPNetwork[] _allowed;
+    private readonly PathString[] _protectedPrefixes;
 
-    public IpRestrictionMiddleware(
-        RequestDelegate next,
-        IConfiguration configuration,
-        ILogger<IpRestrictionMiddleware> logger)
+    public IpRestrictionMiddleware(RequestDelegate next, IOptions<IpRestrictionOptions> options, ILogger<IpRestrictionMiddleware> logger)
     {
+        ArgumentNullException.ThrowIfNull(options);
         _next = next;
         _logger = logger;
-
-        var section = configuration.GetSection("IpRestriction");
-
-        _enabled = section.GetValue<bool>("Enabled");
-
-        var configuredIPs =
-            section.GetSection("AllowedIPs").Get<string[]>() ?? [];
-
-        _allowedIPs = new HashSet<IPAddress>();
-
-        foreach (var value in configuredIPs)
-        {
-            if (!IPAddress.TryParse(value, out var address))
-            {
-                throw new InvalidOperationException(
-                    $"Invalid IP address in IpRestriction: '{value}'.");
-            }
-
-            _allowedIPs.Add(address.MapToIPv6());
-        }
-
-        var paths = section
-            .GetSection("ProtectedPathPrefixes")
-            .Get<string[]>() ?? [];
-
-        _protectedPaths = paths
-            .Select(path => new PathString(path))
-            .ToArray();
-
-        if (_enabled && _allowedIPs.Count == 0)
-        {
-            throw new InvalidOperationException(
-                "IP restriction is enabled, but AllowedIPs is empty.");
-        }
-
-        if (_enabled && _protectedPaths.Length == 0)
-        {
-            throw new InvalidOperationException(
-                "IP restriction is enabled, but no protected paths are configured.");
-        }
+        var value = options.Value;
+        _enabled = value.Enabled;
+        _allowed = value.AllowList.Select(ParseEntry).ToArray();
+        _protectedPrefixes = value.ProtectedPathPrefixes.Select(p => new PathString(p)).ToArray();
     }
 
     public async Task InvokeAsync(HttpContext context)
     {
-        if (!_enabled || !IsProtectedPath(context.Request.Path))
+        ArgumentNullException.ThrowIfNull(context);
+        if (!_enabled || !IsProtected(context))
         {
-            await _next(context);
+            await _next(context).ConfigureAwait(false);
             return;
         }
 
-        var clientIP = GetClientIPAddress(context);
-
-        if (clientIP is null ||
-            !_allowedIPs.Contains(clientIP.MapToIPv6()))
+        var remote = context.Connection.RemoteIpAddress;
+        if (remote is not null && remote.IsIPv4MappedToIPv6)
         {
-            _logger.LogWarning(
-                "IP restriction denied request. Path: {Path}; Client IP: {ClientIP}",
-                context.Request.Path,
-                clientIP?.ToString() ?? "Unknown");
+            remote = remote.MapToIPv4();
+        }
 
-            context.Response.StatusCode =
-                StatusCodes.Status403Forbidden;
-
+        if (remote is null || !_allowed.Any(n => n.Contains(remote)))
+        {
+            LogBlocked(context.Request.Path.Value ?? "/", remote?.ToString() ?? "unknown");
+            await ProblemResponses.WriteAsync(context, new ProblemDetails
+            {
+                Status = StatusCodes.Status403Forbidden,
+                Title = "Forbidden",
+                Detail = "This endpoint is not available from your network.",
+            }).ConfigureAwait(false);
             return;
         }
 
-        await _next(context);
+        await _next(context).ConfigureAwait(false);
     }
 
-    private static IPAddress? GetClientIPAddress(HttpContext context)
+    private bool IsProtected(HttpContext context) =>
+        context.GetEndpoint()?.Metadata.GetMetadata<IpRestrictedAttribute>() is not null
+        || _protectedPrefixes.Any(p => context.Request.Path.StartsWithSegments(p, StringComparison.OrdinalIgnoreCase));
+
+    private static IPNetwork ParseEntry(string entry)
     {
-        var remoteIp = context.Connection.RemoteIpAddress;
-        if (remoteIp is not null)
+        if (IPNetwork.TryParse(entry, out var network))
         {
-            return remoteIp;
+            return network;
         }
 
-        var forwardedFor = context.Request.Headers["X-Forwarded-For"].FirstOrDefault();
-        if (string.IsNullOrWhiteSpace(forwardedFor))
+        if (IPAddress.TryParse(entry, out var address))
         {
-            return null;
+            if (address.IsIPv4MappedToIPv6)
+            {
+                address = address.MapToIPv4();
+            }
+
+            return new IPNetwork(address, address.AddressFamily == System.Net.Sockets.AddressFamily.InterNetwork ? 32 : 128);
         }
 
-        var first = forwardedFor.Split(',')[0].Trim();
-        return IPAddress.TryParse(first, out var parsed)
-            ? parsed
-            : null;
+        throw new InvalidOperationException($"IpRestriction:AllowList contains an invalid entry '{entry}'.");
     }
 
-    private bool IsProtectedPath(PathString path)
-    {
-        return _protectedPaths.Any(prefix =>
-            path.StartsWithSegments(
-                prefix,
-                StringComparison.OrdinalIgnoreCase));
-    }
+    [LoggerMessage(Level = LogLevel.Warning, Message = "IP restriction blocked {Path} from {RemoteIp}")]
+    private partial void LogBlocked(string path, string remoteIp);
 }

@@ -1,0 +1,27 @@
+@model BranchFormViewModel
+<form asp-action="@(Model.IsEdit ? "Edit" : "Create")" asp-route-branchCode="@(Model.IsEdit ? Model.BranchCode : null)" method="post" class="card stack">
+    <partial name="_ValidationSummary" />
+    <input type="hidden" asp-for="IsEdit" />
+    <div class="form-grid">
+        <div>
+            <label asp-for="BranchCode"></label>
+            @if (Model.IsEdit)
+            {
+                <input asp-for="BranchCode" readonly />
+            }
+            else
+            {
+                <input asp-for="BranchCode" placeholder="BR-007" />
+            }
+            <span asp-validation-for="BranchCode" class="field-error"></span>
+        </div>
+        <div><label asp-for="Name"></label><input asp-for="Name" /><span asp-validation-for="Name" class="field-error"></span></div>
+        <div><label asp-for="Region"></label><input asp-for="Region" /><span asp-validation-for="Region" class="field-error"></span></div>
+        <div><label asp-for="OpeningHours"></label><input asp-for="OpeningHours" /><span asp-validation-for="OpeningHours" class="field-error"></span></div>
+        <div><label asp-for="CounterCount"></label><input asp-for="CounterCount" type="number" min="1" max="20" /><span asp-validation-for="CounterCount" class="field-error"></span></div>
+    </div>
+    <div class="row">
+        <button type="submit" class="btn">Save</button>
+        <a class="btn secondary" asp-action="Index">Cancel</a>
+    </div>
+</form>

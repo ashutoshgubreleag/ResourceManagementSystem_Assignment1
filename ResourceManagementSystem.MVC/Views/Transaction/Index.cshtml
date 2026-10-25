@@ -1,33 +1,15 @@
-@model List<ResourceManagementSystem.Database.Models.TransactionEntity>
+@model IReadOnlyList<TransactionEntity>
 @{
     ViewData["Title"] = "Transactions";
 }
-
-<div class="d-flex justify-content-between align-items-center mb-3">
-    <h2>Counter transactions</h2>
-    <a asp-action="Create" class="btn btn-primary">New transaction</a>
+<div class="page-head">
+    <div>
+        <h1>Counter transactions</h1>
+        <p class="lead">@(User.CanSeeAllBranches ? "All branches" : $"Branch {User.BranchCode}"), most recent first.</p>
+    </div>
+    @if (User.StaffRole is StaffRole.CounterClerk or StaffRole.BranchManager)
+    {
+        <a class="btn brand" asp-action="Create">New counter transaction</a>
+    }
 </div>
-
-<table class="table table-striped table-bordered">
-    <thead>
-        <tr>
-            <th>Id</th>
-            <th>Branch</th>
-            <th>Clerk</th>
-            <th>Status</th>
-            <th>Amount</th>
-        </tr>
-    </thead>
-    <tbody>
-        @foreach (var tx in Model)
-        {
-            <tr>
-                <td>@tx.Id</td>
-                <td>@tx.BranchCode</td>
-                <td>@tx.ClerkStaffId</td>
-                <td>@tx.Status</td>
-                <td>@tx.TotalAmount</td>
-            </tr>
-        }
-    </tbody>
-</table>
+<div class="card"><partial name="_TransactionTable" model="Model" /></div>

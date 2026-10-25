@@ -1,61 +1,72 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using ResourceManagementSystem.Database.Models;
+using Microsoft.Extensions.Options;
+using ResourceManagementSystem.Models.ValueObjects;
+using ResourceManagementSystem.MVC.Models;
+using ResourceManagementSystem.MVC.Security;
+using ResourceManagementSystem.Services.Common;
 using ResourceManagementSystem.Services.MoneyOrders;
+using ResourceManagementSystem.Services.Transactions;
+using ResourceManagementSystem.Utilities.Filters;
 
 namespace ResourceManagementSystem.MVC.Controllers;
 
-[Authorize]
-public class MoneyOrderController : Controller
+public sealed class MoneyOrderController(
+    IMoneyOrderService moneyOrders,
+    ITransactionService transactions,
+    IOptions<BusinessRulesOptions> rules) : ApexPostController
 {
-    private readonly IMoneyOrderService _moneyOrderService;
+    public async Task<IActionResult> Index(CancellationToken cancellationToken) =>
+        View(await moneyOrders.GetForBranchAsync(User.CanSeeAllBranches ? null : User.BranchCode, cancellationToken));
 
-    public MoneyOrderController(IMoneyOrderService moneyOrderService)
-    {
-        _moneyOrderService = moneyOrderService;
-    }
-
-    public IActionResult Index()
-    {
-        return View(_moneyOrderService.GetAllOrders().OrderByDescending(x => x.CreatedAt).ToList());
-    }
-
+    [Authorize(Policy = Policies.CanTransact)]
     [HttpGet]
-    public IActionResult Create()
+    public IActionResult Create(int id) =>
+        View(new MoneyOrderFormViewModel { TransactionId = id, IdentityThreshold = rules.Value.MoneyOrderIdentityThreshold });
+
+    [Authorize(Policy = Policies.CanTransact)]
+    [HttpPost]
+    [Audited("MoneyOrder.Add", "Amount")]
+    public async Task<IActionResult> Create(int id, MoneyOrderFormViewModel model, CancellationToken cancellationToken)
     {
-        return View(new MoneyOrderEntity());
+        ArgumentNullException.ThrowIfNull(model);
+        var order = await transactions.AddMoneyOrderAsync(id, new MoneyOrderCommand
+        {
+            Amount = model.Amount,
+            Sender = model.Sender,
+            Recipient = model.Recipient,
+        }, Actor, cancellationToken);
+
+        var threshold = new Money(rules.Value.MoneyOrderIdentityThreshold);
+        Flash(order.Amount > threshold
+            ? $"Money order {order.SerialNumber} added (fee {order.Fee}). It is above {threshold}: record a passed identity check before payment."
+            : $"Money order {order.SerialNumber} added (fee {order.Fee}).");
+        return RedirectToAction("Details", "Transaction", new { id });
     }
 
+    [Authorize(Policy = Policies.CanTransact)]
+    [HttpGet]
+    public IActionResult Verify(int id) => View(new IdentityVerificationFormViewModel { TransactionId = id });
+
+    /// <summary>
+    /// Identity verification. Only DocumentType and Result are whitelisted for audit; the document
+    /// number is masked in the service and never reaches the audit log.
+    /// </summary>
+    [Authorize(Policy = Policies.CanTransact)]
     [HttpPost]
-    [ValidateAntiForgeryToken]
-    public IActionResult Create(MoneyOrderEntity model)
+    [Audited("IdentityVerification.Record", "DocumentType", "Result")]
+    public async Task<IActionResult> Verify(int id, IdentityVerificationFormViewModel model, CancellationToken cancellationToken)
     {
-        if (!ModelState.IsValid)
+        ArgumentNullException.ThrowIfNull(model);
+        var verification = await transactions.AddIdentityVerificationAsync(id, new IdentityVerificationCommand
         {
-            return View(model);
-        }
+            CustomerName = model.CustomerName,
+            DocumentType = model.DocumentType,
+            DocumentNumber = model.DocumentNumber,
+            Result = model.Result,
+        }, Actor, cancellationToken);
 
-        try
-        {
-            var verification = model.Amount > 1000m
-                ? new IdentityVerificationEntity
-                {
-                    BranchCode = model.BranchCode,
-                    StaffId = 1,
-                    DocumentType = DocumentType.Passport,
-                    MaskedDocumentNumber = "********1234",
-                    Result = VerificationResult.Pass,
-                    VerifiedAt = DateTime.UtcNow
-                }
-                : null;
-
-            _moneyOrderService.CreateMoneyOrder(model, verification, 1000m);
-            return RedirectToAction(nameof(Index));
-        }
-        catch (Exception ex)
-        {
-            ModelState.AddModelError(string.Empty, ex.Message);
-            return View(model);
-        }
+        Flash($"Identity check recorded: {verification.DocumentType} {verification.MaskedDocumentNumber} ({verification.Result}).");
+        return RedirectToAction("Details", "Transaction", new { id });
     }
 }

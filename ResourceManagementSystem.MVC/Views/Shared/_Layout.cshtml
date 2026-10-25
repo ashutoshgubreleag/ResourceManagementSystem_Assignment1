@@ -1,42 +1,52 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>@ViewData["Title"] - ApexPost</title>
-    <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
+    <title>@ViewData["Title"] - ApexPost Counter</title>
     <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
 </head>
 <body>
-    <header>
-        <nav class="navbar navbar-expand-sm navbar-dark bg-dark mb-3">
-            <div class="container-fluid">
-                <a class="navbar-brand" asp-controller="Home" asp-action="Index">ApexPost</a>
-                <div class="navbar-nav">
-                    <a class="nav-link" asp-controller="Home" asp-action="Index">Dashboard</a>
-                    <a class="nav-link" asp-controller="Branch" asp-action="Index">Branches</a>
-                    <a class="nav-link" asp-controller="Staff" asp-action="Index">Staff</a>
-                    <a class="nav-link" asp-controller="Catalog" asp-action="Index">Catalog</a>
-                    <a class="nav-link" asp-controller="Transaction" asp-action="Index">Transactions</a>
-                    <a class="nav-link" asp-controller="Shipping" asp-action="Index">Shipping</a>
-                    <a class="nav-link" asp-controller="MoneyOrder" asp-action="Index">Money Orders</a>
-                    <a class="nav-link" asp-controller="Report" asp-action="Index">Reports</a>
+    <header class="topbar">
+        <div class="inner">
+            <a class="brand" asp-controller="Home" asp-action="Index">ApexPost <span>Counter</span></a>
+            @if (User.Identity?.IsAuthenticated == true)
+            {
+                var role = User.StaffRole;
+                <nav class="nav" aria-label="Main">
+                    <a asp-controller="Branch" asp-action="Dashboard" asp-route-branchCode="@User.BranchCode.Value">Dashboard</a>
+                    @if (role is StaffRole.CounterClerk or StaffRole.BranchManager)
+                    {
+                        <a asp-controller="Transaction" asp-action="Create">New sale</a>
+                    }
+                    <a asp-controller="Transaction" asp-action="Index">Transactions</a>
+                    <a asp-controller="Catalog" asp-action="Index">Catalogue</a>
+                    <a asp-controller="Shipping" asp-action="Index">Postage calculator</a>
+                    <a asp-controller="MoneyOrder" asp-action="Index">Money orders</a>
+                    <a asp-controller="Report" asp-action="Index">Reports</a>
+                    <a asp-controller="Branch" asp-action="Index">Branches</a>
+                    <a asp-controller="Staff" asp-action="Index">Staff</a>
+                    @if (role is StaffRole.Administrator or StaffRole.Auditor)
+                    {
+                        <a asp-controller="Admin" asp-action="Audit">Audit log</a>
+                    }
+                </nav>
+                <div class="userchip">
+                    <span>@User.Identity!.Name</span>
+                    <span class="role">@role · @User.BranchCode</span>
+                    <form asp-controller="Account" asp-action="Logout" method="post">
+                        <button type="submit">Sign out</button>
+                    </form>
                 </div>
-            </div>
-        </nav>
-    </header>
-    <div class="container">
-        <main role="main" class="pb-3">
-            @RenderBody()
-        </main>
-    </div>
-    <footer class="border-top footer text-muted mt-5">
-        <div class="container">
-            &copy; 2026 - ApexPost branch operations
+            }
         </div>
-    </footer>
-    <script src="~/lib/jquery/dist/jquery.min.js"></script>
-    <script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
+    </header>
+    <main>
+        <partial name="_Flash" />
+        @RenderBody()
+    </main>
+    <footer>ApexPost Counter Platform · reference <span class="mono">@Context.TraceIdentifier</span></footer>
+    <script src="~/js/site.js" asp-append-version="true"></script>
     @await RenderSectionAsync("Scripts", required: false)
 </body>
 </html>

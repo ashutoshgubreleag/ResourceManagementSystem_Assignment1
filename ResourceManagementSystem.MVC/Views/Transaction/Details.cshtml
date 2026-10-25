@@ -1,0 +1,156 @@
+@model TransactionDetails
+@inject ResourceManagementSystem.Services.Catalog.IProductCatalogService Catalog
+@{
+    var tx = Model.Transaction;
+    ViewData["Title"] = $"Transaction {tx.Id}";
+    var canTransact = User.StaffRole is StaffRole.CounterClerk or StaffRole.BranchManager && User.BranchCode == tx.BranchCode;
+    var isManager = User.StaffRole == StaffRole.BranchManager && User.BranchCode == tx.BranchCode;
+    var editable = tx.IsOpen && canTransact;
+    var products = editable ? await Catalog.GetProductsAsync(Context.RequestAborted) : [];
+}
+<div class="page-head">
+    <div>
+        <h1>Transaction @tx.Id <span class="badge @(tx.Status switch { TransactionStatus.Paid => "ok", TransactionStatus.Open => "info", _ => "bad" })">@tx.Status</span></h1>
+        <p class="lead"><span class="mono">@tx.BranchCode</span> · counter @tx.CounterTerminalId · clerk @tx.ClerkStaffId · opened @tx.CreatedAt.ToString("dd MMM yyyy HH:mm") UTC
+            @if (tx.PaymentMethod is { } pm) { <text> · paid by @pm</text> }</p>
+    </div>
+    <a class="btn secondary" asp-action="Index">All transactions</a>
+</div>
+
+@if (!string.IsNullOrEmpty(tx.VoidReason))
+{
+    <div class="alert warn">@tx.Status by staff @tx.AuthorisedByStaffId: @tx.VoidReason</div>
+}
+@if (tx.IsOpen && Model.IdentityVerificationRequired && !Model.IdentityVerificationSatisfied)
+{
+    <div class="alert warn">This basket has a money order above the identity threshold. Record a passed identity verification before taking payment.</div>
+}
+
+<div class="grid cols-2">
+    <div class="card">
+        <h2>Basket</h2>
+        <div class="table-wrap">
+            <table>
+                <thead><tr><th>#</th><th>Line</th><th class="num">Qty</th><th class="num">Unit</th><th class="num">Net</th><th class="num">Tax</th><th></th></tr></thead>
+                <tbody>
+                    @foreach (var line in tx.LineItems)
+                    {
+                        <tr>
+                            <td>@line.Id</td>
+                            <td>
+                                <span class="badge @(line.LineType == TransactionLineType.RetailItem ? "" : "info")">@line.LineType</span>
+                                @line.Description
+                                <div class="help mono">@line.ItemCode · @line.TaxCategory tax
+                                    @if (line.PassThroughAmount.Amount > 0) { <text> · face value @line.PassThroughAmount</text> }
+                                    @if (line.LineType == TransactionLineType.Shipping && line.ReferenceId is int sid) { <text> · </text><a asp-controller="Shipping" asp-action="Label" asp-route-id="@sid">label</a> }
+                                </div>
+                            </td>
+                            <td class="num">@line.Quantity</td>
+                            <td class="num">@line.UnitPrice</td>
+                            <td class="num">@line.LineTotal</td>
+                            <td class="num">@line.TaxAmount</td>
+                            <td>
+                                @if (editable)
+                                {
+                                    <form class="inline" asp-action="RemoveLine" asp-route-id="@tx.Id" method="post">
+                                        <input type="hidden" name="lineNumber" value="@line.Id" />
+                                        <button class="btn small secondary" type="submit">Remove</button>
+                                    </form>
+                                }
+                            </td>
+                        </tr>
+                    }
+                    @if (tx.LineItems.Count == 0)
+                    {
+                        <tr class="muted"><td colspan="7">The basket is empty.</td></tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+        <table class="totals mt">
+            <tr><td>Retail (ex tax)</td><td class="num">@tx.RetailNet</td></tr>
+            <tr><td>Services (ex tax)</td><td class="num">@tx.ServicesNet</td></tr>
+            <tr><td>Tax</td><td class="num">@tx.TaxAmount</td></tr>
+            <tr><td>Money order face value</td><td class="num">@tx.PassThroughAmount</td></tr>
+            <tr class="grand"><td>Total to pay</td><td class="num">@tx.TotalAmount</td></tr>
+        </table>
+    </div>
+
+    <div class="stack">
+        @if (editable)
+        {
+            <div class="card">
+                <h2>Add retail item</h2>
+                <form asp-action="AddItem" asp-route-id="@tx.Id" method="post" class="form-grid">
+                    <div>
+                        <label for="sku">Product</label>
+                        <select id="sku" name="Sku">
+                            @foreach (var p in products)
+                            {
+                                <option value="@p.Sku.Value">@p.Sku · @p.Name (@p.UnitPrice)</option>
+                            }
+                        </select>
+                    </div>
+                    <div><label for="qty">Quantity</label><input id="qty" type="number" name="Quantity" value="1" min="1" max="100" /></div>
+                    <div><label>&nbsp;</label><button type="submit" class="btn">Add</button></div>
+                </form>
+            </div>
+            <div class="card">
+                <h2>Add a service</h2>
+                <div class="row">
+                    <a class="btn secondary" asp-controller="Shipping" asp-action="Add" asp-route-id="@tx.Id">Letter / parcel</a>
+                    <a class="btn secondary" asp-controller="MoneyOrder" asp-action="Create" asp-route-id="@tx.Id">Money order</a>
+                    <a class="btn secondary" asp-controller="MoneyOrder" asp-action="Verify" asp-route-id="@tx.Id">Identity verification</a>
+                </div>
+            </div>
+            <div class="card">
+                <h2>Take payment</h2>
+                @if (Model.PaymentBlocker is { } blocker)
+                {
+                    <p class="help">@blocker</p>
+                }
+                <form asp-action="Pay" asp-route-id="@tx.Id" method="post" class="row">
+                    <select name="PaymentMethod" aria-label="Payment method" asp-items="Html.GetEnumSelectList<PaymentMethod>()"></select>
+                    <button type="submit" class="btn brand">Pay @tx.TotalAmount</button>
+                </form>
+            </div>
+        }
+
+        @if (isManager && tx.Status is TransactionStatus.Open or TransactionStatus.Paid)
+        {
+            <div class="card">
+                <h2>Manager actions</h2>
+                <form asp-action="Void" asp-route-id="@tx.Id" method="post" class="stack">
+                    <label for="void-reason">Void reason</label>
+                    <input id="void-reason" type="text" name="Reason" placeholder="e.g. Customer changed mind before leaving" />
+                    <button type="submit" class="btn danger" data-confirm="Void transaction @tx.Id?">Void</button>
+                </form>
+                @if (tx.Status == TransactionStatus.Paid)
+                {
+                    <form asp-action="Refund" asp-route-id="@tx.Id" method="post" class="stack mt">
+                        <label for="refund-reason">Refund reason</label>
+                        <input id="refund-reason" type="text" name="Reason" placeholder="e.g. Damaged item returned" />
+                        <button type="submit" class="btn danger" data-confirm="Refund transaction @tx.Id and return stock?">Refund</button>
+                    </form>
+                }
+            </div>
+        }
+
+        @if (Model.MoneyOrders.Count > 0 || Model.Verifications.Count > 0)
+        {
+            <div class="card">
+                <h2>Money orders and identity checks</h2>
+                <table>
+                    @foreach (var mo in Model.MoneyOrders)
+                    {
+                        <tr><td class="mono">@mo.SerialNumber</td><td>@mo.Amount to @mo.Recipient</td><td><span class="badge">@mo.Status</span></td></tr>
+                    }
+                    @foreach (var v in Model.Verifications)
+                    {
+                        <tr><td>@v.DocumentType</td><td class="mono">@v.MaskedDocumentNumber</td><td><span class="badge @(v.Result == VerificationResult.Passed ? "ok" : "bad")">@v.Result</span></td></tr>
+                    }
+                </table>
+            </div>
+        }
+    </div>
+</div>

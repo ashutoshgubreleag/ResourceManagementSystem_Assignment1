@@ -1,0 +1,79 @@
+@model DashboardViewModel
+@{
+    var d = Model.Dashboard;
+    ViewData["Title"] = $"{d.Branch.Name} dashboard";
+}
+<div class="page-head">
+    <div>
+        <h1>@d.Branch.Name <span class="badge @(d.Branch.Status == BranchStatus.Active ? "ok" : "bad")">@d.Branch.Status</span></h1>
+        <p class="lead"><span class="mono">@d.Branch.BranchCode</span> · @d.Branch.Region · @d.Branch.OpeningHours</p>
+    </div>
+    <div class="row">
+        @if (Model.CanSwitchBranch)
+        {
+            <div class="row no-print">
+                @foreach (var b in Model.Branches)
+                {
+                    <a class="btn small @(b.BranchCode == d.Branch.BranchCode ? "" : "secondary")" asp-action="Dashboard" asp-route-branchCode="@b.BranchCode.Value">@b.BranchCode</a>
+                }
+            </div>
+        }
+        @if (Model.CanTransact && d.Branch.Status == BranchStatus.Active && User.BranchCode == d.Branch.BranchCode)
+        {
+            <a class="btn brand" asp-controller="Transaction" asp-action="Create">New counter transaction</a>
+        }
+    </div>
+</div>
+
+<div class="grid cols-4">
+    <div class="card kpi"><div class="label">Sales @d.SalesDate.ToString("dd MMM")</div><div class="value">@(d.Sales.RetailNet + d.Sales.ServicesNet)</div><div class="hint">@d.Sales.TransactionCount paid transactions (ex tax)</div></div>
+    <div class="card kpi"><div class="label">Retail / services</div><div class="value">@d.Sales.RetailNet</div><div class="hint">services @d.Sales.ServicesNet</div></div>
+    <div class="card kpi"><div class="label">Low-stock lines</div><div class="value">@d.LowStock.Rows.Count</div><div class="hint">at or below reorder level</div></div>
+    <div class="card kpi"><div class="label">Open baskets</div><div class="value">@d.OpenTransactionCount</div><div class="hint">built in @d.BuildMilliseconds ms (parallel)</div></div>
+</div>
+
+<div class="grid cols-2 mt">
+    <div class="card">
+        <div class="row"><h2>Low stock</h2><span class="spacer"></span><a asp-controller="Report" asp-action="LowStock" asp-route-branch="@d.Branch.BranchCode.Value">Full report</a></div>
+        <div class="table-wrap">
+            <table>
+                <thead><tr><th>SKU</th><th>Product</th><th class="num">On hand</th><th class="num">Reorder at</th></tr></thead>
+                <tbody>
+                    @foreach (var row in d.LowStock.Rows.Take(8))
+                    {
+                        <tr><td class="mono">@row.Sku</td><td>@row.ProductName</td><td class="num">@row.QuantityOnHand</td><td class="num">@row.ReorderThreshold</td></tr>
+                    }
+                    @if (d.LowStock.Rows.Count == 0)
+                    {
+                        <tr class="muted"><td colspan="4">No low-stock items.</td></tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+    <div class="card">
+        <h2>Alerts</h2>
+        <div class="table-wrap">
+            <table>
+                <tbody>
+                    @foreach (var n in d.Alerts)
+                    {
+                        <tr>
+                            <td><span class="badge @(n.Type == NotificationType.LowStock ? "warn" : n.Type == NotificationType.HighValueMoneyOrder ? "info" : "bad")">@n.Type</span></td>
+                            <td>@n.Message<div class="help">@n.CreatedAt.ToString("dd MMM HH:mm") UTC</div></td>
+                        </tr>
+                    }
+                    @if (d.Alerts.Count == 0)
+                    {
+                        <tr class="muted"><td>No alerts.</td></tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<div class="card mt">
+    <div class="row"><h2>Recent transactions</h2><span class="spacer"></span><a asp-controller="Transaction" asp-action="Index">All transactions</a></div>
+    <partial name="~/Views/Transaction/_TransactionTable.cshtml" model="d.RecentTransactions" />
+</div>

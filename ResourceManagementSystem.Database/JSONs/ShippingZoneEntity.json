@@ -1,0 +1,102 @@
+[
+  {
+    "Id": 1,
+    "ZoneCode": "Z01",
+    "Name": "Local metro",
+    "IsInternational": false,
+    "IsRemote": false,
+    "LetterBaseRate": 1.2,
+    "ParcelBaseRate": 8.95,
+    "PerKgRate": 1.1
+  },
+  {
+    "Id": 2,
+    "ZoneCode": "Z02",
+    "Name": "Intrastate",
+    "IsInternational": false,
+    "IsRemote": false,
+    "LetterBaseRate": 1.2,
+    "ParcelBaseRate": 10.45,
+    "PerKgRate": 1.5
+  },
+  {
+    "Id": 3,
+    "ZoneCode": "Z03",
+    "Name": "Interstate east coast",
+    "IsInternational": false,
+    "IsRemote": false,
+    "LetterBaseRate": 1.2,
+    "ParcelBaseRate": 12.95,
+    "PerKgRate": 2.1
+  },
+  {
+    "Id": 4,
+    "ZoneCode": "Z04",
+    "Name": "Interstate west & NT",
+    "IsInternational": false,
+    "IsRemote": false,
+    "LetterBaseRate": 1.2,
+    "ParcelBaseRate": 14.95,
+    "PerKgRate": 2.6
+  },
+  {
+    "Id": 5,
+    "ZoneCode": "Z05",
+    "Name": "Remote Australia",
+    "IsInternational": false,
+    "IsRemote": true,
+    "LetterBaseRate": 1.4,
+    "ParcelBaseRate": 16.95,
+    "PerKgRate": 3.2
+  },
+  {
+    "Id": 6,
+    "ZoneCode": "Z06",
+    "Name": "Tasmania",
+    "IsInternational": false,
+    "IsRemote": false,
+    "LetterBaseRate": 1.2,
+    "ParcelBaseRate": 13.45,
+    "PerKgRate": 2.3
+  },
+  {
+    "Id": 7,
+    "ZoneCode": "Z07",
+    "Name": "New Zealand",
+    "IsInternational": true,
+    "IsRemote": false,
+    "LetterBaseRate": 3.1,
+    "ParcelBaseRate": 21.5,
+    "PerKgRate": 4.8
+  },
+  {
+    "Id": 8,
+    "ZoneCode": "Z08",
+    "Name": "Asia Pacific",
+    "IsInternational": true,
+    "IsRemote": false,
+    "LetterBaseRate": 3.6,
+    "ParcelBaseRate": 27.5,
+    "PerKgRate": 6.9
+  },
+  {
+    "Id": 9,
+    "ZoneCode": "Z09",
+    "Name": "Europe & UK",
+    "IsInternational": true,
+    "IsRemote": false,
+    "LetterBaseRate": 4.2,
+    "ParcelBaseRate": 34.95,
+    "PerKgRate": 9.4
+  },
+  {
+    "Id": 10,
+    "ZoneCode": "Z10",
+    "Name": "Americas",
+    "IsInternational": true,
+    "IsRemote": false,
+    "LetterBaseRate": 4.2,
+    "ParcelBaseRate": 36.95,
+    "PerKgRate": 9.9
+  }
+]

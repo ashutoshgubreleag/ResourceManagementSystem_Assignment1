@@ -1,0 +1,299 @@
+[
+  {
+    "Id": "abaebf1f-cdef-4be6-8c71-cbc73a827e74",
+    "TimestampUtc": "2026-10-25T21:24:57.3521227+00:00",
+    "Action": "Account.Login",
+    "StaffId": "7",
+    "Role": "CounterClerk",
+    "BranchCode": "BR-001",
+    "Controller": "Account",
+    "ControllerAction": "Login",
+    "HttpMethod": "POST",
+    "Path": "/Account/Login",
+    "RouteValues": {},
+    "Fields": {
+      "Email": "clerk.br001a@apexpost.local"
+    },
+    "StatusCode": 302,
+    "Outcome": "Succeeded",
+    "Error": null,
+    "DurationMs": 138,
+    "CorrelationId": "cb73e11fab93402cbde0257ca6c3eec9"
+  },
+  {
+    "Id": "784afd07-4402-4562-afec-0bc716ca6520",
+    "TimestampUtc": "2026-10-25T21:24:57.7656697+00:00",
+    "Action": "Transaction.Open",
+    "StaffId": "7",
+    "Role": "CounterClerk",
+    "BranchCode": "BR-001",
+    "Controller": "Transaction",
+    "ControllerAction": "Create",
+    "HttpMethod": "POST",
+    "Path": "/Transaction/Create",
+    "RouteValues": {},
+    "Fields": {
+      "CounterTerminalId": "1"
+    },
+    "StatusCode": 302,
+    "Outcome": "Succeeded",
+    "Error": null,
+    "DurationMs": 21,
+    "CorrelationId": "b82226f1c3854b7ca53db7e189339bb5"
+  },
+  {
+    "Id": "2b4769c7-7799-4a62-8a13-8ed40906a972",
+    "TimestampUtc": "2026-10-25T21:24:57.9059877+00:00",
+    "Action": "Transaction.AddItem",
+    "StaffId": "7",
+    "Role": "CounterClerk",
+    "BranchCode": "BR-001",
+    "Controller": "Transaction",
+    "ControllerAction": "AddItem",
+    "HttpMethod": "POST",
+    "Path": "/Transaction/AddItem/65",
+    "RouteValues": {
+      "id": "65"
+    },
+    "Fields": {
+      "Sku": "PKG-001",
+      "Quantity": "2"
+    },
+    "StatusCode": 302,
+    "Outcome": "Succeeded",
+    "Error": null,
+    "DurationMs": 20,
+    "CorrelationId": "4ce6735388d8432c92319185332882a6"
+  },
+  {
+    "Id": "73362032-ad29-456a-9dee-6b4e7d2a5668",
+    "TimestampUtc": "2026-10-25T21:24:58.0832927+00:00",
+    "Action": "Transaction.AddShipment",
+    "StaffId": "7",
+    "Role": "CounterClerk",
+    "BranchCode": "BR-001",
+    "Controller": "Shipping",
+    "ControllerAction": "Add",
+    "HttpMethod": "POST",
+    "Path": "/Shipping/Add/65",
+    "RouteValues": {
+      "id": "65"
+    },
+    "Fields": {
+      "ShippingType": "Parcel",
+      "ServiceLevel": "Express",
+      "ZoneCode": "Z03",
+      "WeightKg": "2.5"
+    },
+    "StatusCode": 302,
+    "Outcome": "Succeeded",
+    "Error": null,
+    "DurationMs": 74,
+    "CorrelationId": "360afb0e39ae4cdc97ac6f85640db39e"
+  },
+  {
+    "Id": "c83f8b22-2c17-48d8-a356-24745c251b06",
+    "TimestampUtc": "2026-10-25T21:24:58.1452005+00:00",
+    "Action": "MoneyOrder.Add",
+    "StaffId": "7",
+    "Role": "CounterClerk",
+    "BranchCode": "BR-001",
+    "Controller": "MoneyOrder",
+    "ControllerAction": "Create",
+    "HttpMethod": "POST",
+    "Path": "/MoneyOrder/Create/65",
+    "RouteValues": {
+      "id": "65"
+    },
+    "Fields": {
+      "Amount": "1500"
+    },
+    "StatusCode": 302,
+    "Outcome": "Succeeded",
+    "Error": null,
+    "DurationMs": 13,
+    "CorrelationId": "c4b7325f72b64e6a97d979b276a5671d"
+  },
+  {
+    "Id": "a21dc095-eb2a-40b3-a918-28047a14fff2",
+    "TimestampUtc": "2026-10-25T21:24:58.1778613+00:00",
+    "Action": "Transaction.Pay",
+    "StaffId": "7",
+    "Role": "CounterClerk",
+    "BranchCode": "BR-001",
+    "Controller": "Transaction",
+    "ControllerAction": "Pay",
+    "HttpMethod": "POST",
+    "Path": "/Transaction/Pay/65",
+    "RouteValues": {
+      "id": "65"
+    },
+    "Fields": {
+      "PaymentMethod": "Card"
+    },
+    "StatusCode": 422,
+    "Outcome": "Rejected",
+    "Error": "MONEY_ORDER_ID_REQUIRED",
+    "DurationMs": 5,
+    "CorrelationId": "df51bec52ecf41f2b0dd676201a6db7a"
+  },
+  {
+    "Id": "90975ee7-a07d-4469-b357-67a4c6e5a9b2",
+    "TimestampUtc": "2026-10-25T21:24:58.2686991+00:00",
+    "Action": "IdentityVerification.Record",
+    "StaffId": "7",
+    "Role": "CounterClerk",
+    "BranchCode": "BR-001",
+    "Controller": "MoneyOrder",
+    "ControllerAction": "Verify",
+    "HttpMethod": "POST",
+    "Path": "/MoneyOrder/Verify/65",
+    "RouteValues": {
+      "id": "65"
+    },
+    "Fields": {
+      "DocumentType": "Passport",
+      "Result": "Passed"
+    },
+    "StatusCode": 302,
+    "Outcome": "Succeeded",
+    "Error": null,
+    "DurationMs": 22,
+    "CorrelationId": "5dc90685f2074537a6c376d7ddd0d36d"
+  },
+  {
+    "Id": "6dfa81cc-90c1-4c90-a9fa-8d3a344fe966",
+    "TimestampUtc": "2026-10-25T21:24:58.3132628+00:00",
+    "Action": "Transaction.Pay",
+    "StaffId": "7",
+    "Role": "CounterClerk",
+    "BranchCode": "BR-001",
+    "Controller": "Transaction",
+    "ControllerAction": "Pay",
+    "HttpMethod": "POST",
+    "Path": "/Transaction/Pay/65",
+    "RouteValues": {
+      "id": "65"
+    },
+    "Fields": {
+      "PaymentMethod": "Card"
+    },
+    "StatusCode": 302,
+    "Outcome": "Succeeded",
+    "Error": null,
+    "DurationMs": 26,
+    "CorrelationId": "23f103808b50450b829376a6ad7a804e"
+  },
+  {
+    "Id": "aab2f124-96cd-48b9-9d9c-39269d6ba023",
+    "TimestampUtc": "2026-10-25T21:24:58.8410996+00:00",
+    "Action": "Transaction.Refund",
+    "StaffId": "6",
+    "Role": "BranchManager",
+    "BranchCode": "BR-001",
+    "Controller": "Transaction",
+    "ControllerAction": "Refund",
+    "HttpMethod": "POST",
+    "Path": "/Transaction/Refund/65",
+    "RouteValues": {
+      "id": "65"
+    },
+    "Fields": {
+      "Reason": "Customer returned items"
+    },
+    "StatusCode": 302,
+    "Outcome": "Succeeded",
+    "Error": null,
+    "DurationMs": 20,
+    "CorrelationId": "d06820f8e24a4e60b4ff24e3f382fdf2"
+  },
+  {
+    "Id": "d2f33104-9d0e-4bae-98de-55e33afc94c3",
+    "TimestampUtc": "2026-10-25T21:25:08.6657467+00:00",
+    "Action": "Stock.Adjust",
+    "StaffId": "6",
+    "Role": "BranchManager",
+    "BranchCode": "BR-001",
+    "Controller": "Catalog",
+    "ControllerAction": "AdjustStock",
+    "HttpMethod": "POST",
+    "Path": "/Catalog/AdjustStock",
+    "RouteValues": {},
+    "Fields": {
+      "BranchCode": "BR-001",
+      "Sku": "PKG-003",
+      "QuantityChange": "24",
+      "Reason": "Delivery from Sydney DC"
+    },
+    "StatusCode": 302,
+    "Outcome": "Succeeded",
+    "Error": null,
+    "DurationMs": 7,
+    "CorrelationId": "afbfd8e4efcb43268a6b95bc1cf1c1e7"
+  },
+  {
+    "Id": "1e90e624-c3da-44e8-92ff-db29c8bf2ce4",
+    "TimestampUtc": "2026-10-25T21:25:08.7054326+00:00",
+    "Action": "Transaction.Void",
+    "StaffId": "6",
+    "Role": "BranchManager",
+    "BranchCode": "BR-001",
+    "Controller": "Transaction",
+    "ControllerAction": "Void",
+    "HttpMethod": "POST",
+    "Path": "/Transaction/Void/66",
+    "RouteValues": {
+      "id": "66"
+    },
+    "Fields": {},
+    "StatusCode": 400,
+    "Outcome": "Rejected",
+    "Error": "VALIDATION_FAILED",
+    "DurationMs": 1,
+    "CorrelationId": "3023c767a427468383d3d10469eee17d"
+  },
+  {
+    "Id": "b6412d02-3056-4bde-8764-054c7be4c6fd",
+    "TimestampUtc": "2026-10-25T21:25:08.7247607+00:00",
+    "Action": "Transaction.Void",
+    "StaffId": "6",
+    "Role": "BranchManager",
+    "BranchCode": "BR-001",
+    "Controller": "Transaction",
+    "ControllerAction": "Void",
+    "HttpMethod": "POST",
+    "Path": "/Transaction/Void/66",
+    "RouteValues": {
+      "id": "66"
+    },
+    "Fields": {
+      "Reason": "Customer changed their mind"
+    },
+    "StatusCode": 302,
+    "Outcome": "Succeeded",
+    "Error": null,
+    "DurationMs": 4,
+    "CorrelationId": "1a2234544116458795979e957bf1943c"
+  },
+  {
+    "Id": "09ca1506-50b1-4852-a46b-7738329e9b69",
+    "TimestampUtc": "2026-10-25T21:25:44.2941282+00:00",
+    "Action": "Transaction.Open",
+    "StaffId": "22",
+    "Role": "CounterClerk",
+    "BranchCode": "BR-006",
+    "Controller": "Transaction",
+    "ControllerAction": "Create",
+    "HttpMethod": "POST",
+    "Path": "/Transaction/Create",
+    "RouteValues": {},
+    "Fields": {
+      "CounterTerminalId": "1"
+    },
+    "StatusCode": 422,
+    "Outcome": "Rejected",
+    "Error": "BRANCH_CLOSED",
+    "DurationMs": 12,
+    "CorrelationId": "495fd339b8f64d75a64caddbcd9b3409"
+  }
+]

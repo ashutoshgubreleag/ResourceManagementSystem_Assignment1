@@ -1,62 +1,60 @@
-using Microsoft.AspNetCore.Authorization;
-using Microsoft.AspNetCore.Mvc;
-using ResourceManagementSystem.Database.Models;
-using ResourceManagementSystem.MVC.Models;
-using ResourceManagementSystem.Services.Branch;
-using ResourceManagementSystem.Services.Catalog;
-using ResourceManagementSystem.Services.Inventory;
-using ResourceManagementSystem.Services.Staff;
-using ResourceManagementSystem.Services.Transactions;
 using System.Diagnostics;
+using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Diagnostics;
+using Microsoft.AspNetCore.Mvc;
+using ResourceManagementSystem.MVC.Models;
+using ResourceManagementSystem.MVC.Security;
+using ResourceManagementSystem.Utilities.Middleware;
 
-namespace ResourceManagementSystem.MVC.Controllers
+namespace ResourceManagementSystem.MVC.Controllers;
+
+public sealed class HomeController : ApexPostController
 {
-    [Authorize]
-    public class HomeController : Controller
+    /// <summary>Everyone lands on their own branch dashboard.</summary>
+    public IActionResult Index() => RedirectToAction("Dashboard", "Branch", new { branchCode = User.BranchCode.Value });
+
+    [AllowAnonymous]
+    public IActionResult Privacy() => View();
+
+    /// <summary>Friendly error page for browser requests (re-executed by the exception handler).</summary>
+    [AllowAnonymous]
+    [IgnoreAntiforgeryToken]
+    [ResponseCache(Duration = 0, Location = ResponseCacheLocation.None, NoStore = true)]
+    public IActionResult Error()
     {
-        private readonly IBranchService _branchService;
-        private readonly IStaffService _staffService;
-        private readonly IProductCatalogService _productCatalogService;
-        private readonly IInventoryService _inventoryService;
-        private readonly ITransactionService _transactionService;
-
-        public HomeController(
-            IBranchService branchService,
-            IStaffService staffService,
-            IProductCatalogService productCatalogService,
-            IInventoryService inventoryService,
-            ITransactionService transactionService)
+        _ = HttpContext.Features.Get<IExceptionHandlerPathFeature>(); // the exception is logged, never shown
+        Response.StatusCode = StatusCodes.Status500InternalServerError;
+        return View(new ErrorViewModel
         {
-            _branchService = branchService;
-            _staffService = staffService;
-            _productCatalogService = productCatalogService;
-            _inventoryService = inventoryService;
-            _transactionService = transactionService;
-        }
+            StatusCode = 500,
+            Title = "Something went wrong",
+            Message = "The request could not be completed. Please try again or contact support with the reference below.",
+            CorrelationId = CorrelationIdMiddleware.Get(HttpContext),
+            TraceId = Activity.Current?.TraceId.ToString(),
+        });
+    }
 
-        public IActionResult Index()
+    [AllowAnonymous]
+    [IgnoreAntiforgeryToken]
+    [ActionName("StatusCode")]
+    public IActionResult StatusCodePage(int id)
+    {
+        var code = id is >= 400 and <= 599 ? id : 500;
+        Response.StatusCode = code;
+        var (title, message) = code switch
         {
-            var model = new DashboardViewModel
-            {
-                BranchCount = _branchService.GetAll().Count(),
-                StaffCount = _staffService.GetAll().Count(),
-                ProductCount = _productCatalogService.GetProducts().Count(),
-                ActiveTransactionCount = _transactionService.GetAllTransactions().Count(x => x.Status == TransactionStatus.Paid),
-                LowStockCount = _inventoryService.GetAllStock().Count(x => x.QuantityOnHand <= x.ReorderThreshold)
-            };
+            403 => ("Access denied", "Your role or branch does not allow this action."),
+            404 => ("Not found", "The page or record you asked for does not exist."),
+            429 => ("Slow down", "Too many attempts. Wait a minute and try again."),
+            _ => ("Request failed", "The request could not be completed."),
+        };
 
-            return View(model);
-        }
-
-        public IActionResult Privacy()
+        return View("Error", new ErrorViewModel
         {
-            return View();
-        }
-
-        [ResponseCache(Duration = 0, Location = ResponseCacheLocation.None, NoStore = true)]
-        public IActionResult Error()
-        {
-            return View(new ErrorViewModel { RequestId = Activity.Current?.Id ?? HttpContext.TraceIdentifier });
-        }
+            StatusCode = code,
+            Title = title,
+            Message = message,
+            CorrelationId = CorrelationIdMiddleware.Get(HttpContext),
+        });
     }
 }

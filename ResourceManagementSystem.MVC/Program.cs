@@ -1,156 +1,58 @@
-using Microsoft.AspNetCore.Authentication.Cookies;
-using Microsoft.AspNetCore.HttpOverrides;
-using Microsoft.AspNetCore.RateLimiting;
-using ResourceManagementSystem.Database.Models;
-using ResourceManagementSystem.Repositories;
-using ResourceManagementSystem.Services.Authentication;
-using ResourceManagementSystem.Services.Branch;
-using ResourceManagementSystem.Services.Catalog;
-using ResourceManagementSystem.Services.Inventory;
-using ResourceManagementSystem.Services.MoneyOrders;
-using ResourceManagementSystem.Services.Reports;
-using ResourceManagementSystem.Services.Shipping;
-using ResourceManagementSystem.Services.Staff;
-using ResourceManagementSystem.Services.Transactions;
-using ResourceManagementSystem.Utilities;
+using ResourceManagementSystem.MVC.Composition;
 using ResourceManagementSystem.Utilities.Middleware;
-using System.Net;
-using System.Threading.RateLimiting;
 
+// Composition root and pipeline only: no business logic lives here.
 var builder = WebApplication.CreateBuilder(args);
-
-builder.Services.AddScoped<IAuditStore, JsonAuditStore>();
-builder.Services.AddScoped<AuditActionFilter>();
-builder.Services.AddScoped<ValidationFilter>();
-builder.Services.AddScoped<PerformanceFilter>();
-
-builder.Services.AddControllersWithViews(options =>
+builder.WebHost.ConfigureKestrel(options => options.AddServerHeader = false);
+builder.Host.UseDefaultServiceProvider(options =>
 {
-    options.Filters.Add<AuditActionFilter>();
-    options.Filters.Add<ValidationFilter>();
-    options.Filters.Add<PerformanceFilter>();
+    // Fail fast if a singleton ever captures a scoped service.
+    options.ValidateScopes = true;
+    options.ValidateOnBuild = true;
 });
 
-builder.Services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationScheme)
-    .AddCookie(options =>
-    {
-        options.LoginPath = "/Account/Login";
-        options.AccessDeniedPath = null;
-        options.Cookie.HttpOnly = true;
-        options.Cookie.SameSite = SameSiteMode.Lax;
-        options.Cookie.SecurePolicy = CookieSecurePolicy.Always;
-        options.Cookie.IsEssential = true;
-    });
-
-builder.Services.AddAuthorization(options =>
-{
-    options.AddPolicy("BranchManagerOnly", policy =>
-        policy.RequireRole(StaffRole.BranchManager.ToString()));
-
-    options.AddPolicy("SameBranchOnly", policy =>
-        policy.RequireAssertion(context =>
-        {
-            if (context.User.IsInRole(StaffRole.BranchManager.ToString()))
-            {
-                return true;
-            }
-
-            var userBranch = context.User.FindFirst("BranchCode")?.Value;
-            var httpContext = context.Resource as HttpContext;
-            var routeBranch = httpContext?.Request.RouteValues["branchCode"]?.ToString()
-                ?? httpContext?.Request.RouteValues["BranchCode"]?.ToString();
-
-            return !string.IsNullOrWhiteSpace(userBranch)
-                && !string.IsNullOrWhiteSpace(routeBranch)
-                && string.Equals(userBranch, routeBranch, StringComparison.OrdinalIgnoreCase);
-        }));
-});
-
-builder.Services.AddRateLimiter(options =>
-{
-    options.RejectionStatusCode = StatusCodes.Status429TooManyRequests;
-
-    options.AddPolicy("login", httpContext =>
-        RateLimitPartition.GetFixedWindowLimiter(
-            partitionKey: httpContext.Connection.RemoteIpAddress?.ToString() ?? "anonymous",
-            factory: _ => new FixedWindowRateLimiterOptions
-            {
-                PermitLimit = 5,
-                Window = TimeSpan.FromMinutes(5),
-                QueueLimit = 0,
-                AutoReplenishment = true
-            }));
-
-    options.AddPolicy("partner", httpContext =>
-        RateLimitPartition.GetFixedWindowLimiter(
-            partitionKey: httpContext.Connection.RemoteIpAddress?.ToString() ?? "partner-unknown",
-            factory: _ => new FixedWindowRateLimiterOptions
-            {
-                PermitLimit = 20,
-                Window = TimeSpan.FromSeconds(30),
-                QueueLimit = 0,
-                AutoReplenishment = true
-            }));
-});
-
-builder.Services.AddScoped(typeof(IBaseEntityRepository<>), typeof(BaseJsonRepository<>));
-builder.Services.AddScoped<IAuthenticationService, AuthenticationService>();
-builder.Services.AddScoped<IBranchService, BranchService>();
-builder.Services.AddScoped<IStaffService, StaffService>();
-builder.Services.AddScoped<IInventoryService, InventoryService>();
-builder.Services.AddScoped<IShippingPricingStrategy, DefaultShippingPricingStrategy>();
-builder.Services.AddScoped<IShippingService, ShippingService>();
-builder.Services.AddScoped<IMoneyOrderService, MoneyOrderService>();
-builder.Services.AddScoped<ITransactionService, TransactionService>();
-builder.Services.AddScoped<IReportService, ReportService>();
-builder.Services.AddScoped<IProductCatalogService, ProductCatalogService>();
-builder.Services.AddUtilitiesExtentions();
+builder.Services.AddApexPostWeb(builder.Configuration, builder.Environment);
 
 var app = builder.Build();
 
-app.UseMiddleware<CorrelationIdMiddleware>();
-app.UseMiddleware<RequestLoggingMiddleware>();
-app.UseExceptionHandler();
-
+// ---- Middleware pipeline (order matters; DESIGN.md explains each position) ----
+app.UseForwardedHeaders();                               // 1. real client IP, only from trusted proxies
+app.UseMiddleware<CorrelationIdMiddleware>();            // 2. correlation ID + log scope for everything below
+app.UseMiddleware<RequestLoggingMiddleware>();           // 3. timing/logging; outside the handler so it sees the final status
+app.UseExceptionHandler("/Home/Error");                  // 4. Problem Details / error page, no stack traces
+app.UseStatusCodePagesWithReExecute("/Home/StatusCode/{0}");
 if (!app.Environment.IsDevelopment())
 {
-    app.UseHsts();
+    app.UseHsts();                                       // 5. HSTS outside Development
 }
 
-app.UseHttpsRedirection();
-app.UseMiddleware<IpRestrictionMiddleware>();
+app.UseHttpsRedirection();                               // 6. HTTPS only
+app.UseMiddleware<SecurityHeadersMiddleware>();          // 7. CSP, nosniff, frame and referrer policy on every response
+app.UseMiddleware<MaintenanceModeMiddleware>();          // 8. 503 + Retry-After (keeps /health)
+app.UseRouting();                                        // 9. endpoint selected; metadata now visible
+app.UseCors();                                           // 10. partner widget origin only; answers preflights
+app.UseMiddleware<IpRestrictionMiddleware>();            // 11. admin/integration allowlist, 403
+app.UseMiddleware<ApiKeyValidationMiddleware>();         // 12. X-Api-Key on [ApiKeyRequired] endpoints, 401/500
+app.UseRateLimiter();                                    // 13. login brute force + per-partner budget, 429
+app.UseAuthentication();                                 // 14. cookie → ClaimsPrincipal
+app.UseAuthorization();                                  // 15. policies (fallback: authenticated)
 
-app.Use(async (context, next) =>
-{
-    context.Response.OnStarting(() =>
-    {
-        var headers = context.Response.Headers;
-        headers["Content-Security-Policy"] = "default-src 'self'; object-src 'none'; base-uri 'self'; frame-ancestors 'none';";
-        headers["X-Content-Type-Options"] = "nosniff";
-        headers["X-Frame-Options"] = "DENY";
-        headers["Referrer-Policy"] = "strict-origin-when-cross-origin";
-        return Task.CompletedTask;
-    });
-
-    await next();
-});
-
-app.UseMiddleware<MaintenanceModeMiddleware>();
-
-app.UseRouting();
-app.UseAuthentication();
-app.UseAuthorization();
-app.UseRateLimiter();
-app.UseMiddleware<ApiKeyValidationMiddleware>();
-
-app.MapGet("/health", () => Results.Ok(new { status = "Healthy" }));
-app.MapStaticAssets();
-
+app.MapHealthChecks("/health").AllowAnonymous();
+app.MapStaticAssets().AllowAnonymous();
+app.MapControllerRoute(
+    name: "integration",
+    pattern: "integration/parcel-status/{trackingNumber}",
+    defaults: new { controller = "Integration", action = "ParcelStatus" });
+app.MapControllerRoute(
+    name: "branch",
+    pattern: "Branch/{action}/{branchCode:regex(^BR-[0-9]{{3}}$)}",
+    defaults: new { controller = "Branch" });
 app.MapControllerRoute(
     name: "default",
     pattern: "{controller=Home}/{action=Index}/{id?}")
     .WithStaticAssets();
 
-app.Run();
+await app.RunAsync();
 
-public partial class Program { }
+/// <summary>Entry point type, public so WebApplicationFactory can host the app in tests.</summary>
+public partial class Program;

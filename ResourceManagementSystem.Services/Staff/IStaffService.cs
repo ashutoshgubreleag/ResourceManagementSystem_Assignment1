@@ -1,15 +1,48 @@
 using ResourceManagementSystem.Database.Models;
+using ResourceManagementSystem.Models.Validation;
+using ResourceManagementSystem.Models.ValueObjects;
+using ResourceManagementSystem.Services.Common;
 
 namespace ResourceManagementSystem.Services.Staff;
 
+public sealed record SaveStaffCommand
+{
+    public int Id { get; init; }
+
+    [NotBlank, MaxLengthRule(80)]
+    public string Name { get; init; } = string.Empty;
+
+    [NotBlank, MaxLengthRule(120), Matches("^[^@\\s]+@[^@\\s]+\\.[^@\\s]+$", "a valid email address")]
+    public string Email { get; init; } = string.Empty;
+
+    [DefinedEnum]
+    public StaffRole Role { get; init; }
+
+    [NotBlank, Matches("^BR-[0-9]{3}$", "in the form BR-000")]
+    public string HomeBranchCode { get; init; } = string.Empty;
+
+    public bool IsActive { get; init; } = true;
+
+    /// <summary>Initial password for new staff (ignored on update when empty). Never logged or audited.</summary>
+    [MaxLengthRule(128)]
+    public string? InitialPassword { get; init; }
+}
+
 public interface IStaffService
 {
-    StaffEntity AddStaff(StaffEntity staff);
-    StaffEntity UpdateStaff(StaffEntity staff);
-    IEnumerable<StaffEntity> GetAll();
-    StaffEntity? GetById(int id);
-    IEnumerable<StaffEntity> GetByBranch(string branchCode);
-    void DeactivateStaff(int staffId);
-    bool CanProcessTransaction(int staffId, string branchCode);
-    bool CanVoidOrRefund(int staffId, string branchCode);
+    Task<IReadOnlyList<StaffEntity>> GetAllAsync(StaffContext actor, CancellationToken cancellationToken);
+
+    Task<StaffEntity> GetByIdAsync(int staffId, CancellationToken cancellationToken);
+
+    Task<StaffEntity> CreateAsync(SaveStaffCommand command, StaffContext actor, CancellationToken cancellationToken);
+
+    Task<StaffEntity> UpdateAsync(SaveStaffCommand command, StaffContext actor, CancellationToken cancellationToken);
+
+    Task DeactivateAsync(int staffId, StaffContext actor, CancellationToken cancellationToken);
+
+    /// <summary>
+    /// Re-loads the actor and enforces "inactive staff cannot open or process transactions" and
+    /// "a clerk can only transact at their assigned branch".
+    /// </summary>
+    Task<StaffEntity> EnsureCanTransactAsync(StaffContext actor, BranchCode branch, CancellationToken cancellationToken);
 }

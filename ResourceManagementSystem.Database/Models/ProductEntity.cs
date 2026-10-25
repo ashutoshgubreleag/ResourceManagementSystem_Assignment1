@@ -1,12 +1,17 @@
+using ResourceManagementSystem.Models.ValueObjects;
+
 namespace ResourceManagementSystem.Database.Models;
 
-public class ProductEntity
+public class ProductEntity : IEntity
 {
     public int Id { get; set; }
-    public string Sku { get; set; } = string.Empty;
-    public string Name { get; set; } = string.Empty;
+    public Sku Sku { get; set; }
+    public string Name { get; set => field = value?.Trim() ?? string.Empty; } = string.Empty;
     public ProductCategory Category { get; set; }
-    public decimal UnitPrice { get; set; }
+
+    /// <summary>Tax-exclusive shelf price.</summary>
+    public Money UnitPrice { get; set; }
+
     public TaxCategory TaxCategory { get; set; }
     public bool IsActive { get; set; } = true;
 }

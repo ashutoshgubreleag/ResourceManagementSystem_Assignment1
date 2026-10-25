@@ -1,0 +1,5 @@
+@model string?
+@if (User.CanSeeAllBranches)
+{
+    <div><label for="branch">Branch</label><input id="branch" type="text" name="branch" value="@Model" placeholder="All branches" /></div>
+}

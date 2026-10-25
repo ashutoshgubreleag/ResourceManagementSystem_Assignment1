@@ -1,38 +1,19 @@
-@model ResourceManagementSystem.Database.Models.MoneyOrderEntity
+@model MoneyOrderFormViewModel
 @{
-    ViewData["Title"] = "Create money order";
+    ViewData["Title"] = "Add money order";
 }
-
-<h2>Create money order</h2>
-
-<form asp-action="Create" method="post">
-    <div asp-validation-summary="All" class="text-danger"></div>
-
-    <div class="mb-3">
-        <label asp-for="BranchCode" class="form-label">Branch code</label>
-        <input asp-for="BranchCode" class="form-control" />
+<h1>Add money order</h1>
+<p class="lead">Transaction @Model.TransactionId. Fee: 1.5% (minimum $5). Amounts above <strong>@(new Money(Model.IdentityThreshold))</strong> need a passed identity verification in the same transaction before payment.</p>
+<form asp-action="Create" asp-route-id="@Model.TransactionId" method="post" class="card stack">
+    <partial name="_ValidationSummary" />
+    <input type="hidden" asp-for="IdentityThreshold" />
+    <div class="form-grid">
+        <div><label asp-for="Amount"></label><input asp-for="Amount" type="number" step="0.01" min="1" max="10000" /><span asp-validation-for="Amount" class="field-error"></span></div>
+        <div><label asp-for="Sender"></label><input asp-for="Sender" /><span asp-validation-for="Sender" class="field-error"></span></div>
+        <div><label asp-for="Recipient"></label><input asp-for="Recipient" /><span asp-validation-for="Recipient" class="field-error"></span></div>
     </div>
-
-    <div class="mb-3">
-        <label asp-for="Sender" class="form-label"></label>
-        <input asp-for="Sender" class="form-control" />
+    <div class="row">
+        <button type="submit" class="btn">Add to basket</button>
+        <a class="btn secondary" asp-controller="Transaction" asp-action="Details" asp-route-id="@Model.TransactionId">Back to basket</a>
     </div>
-
-    <div class="mb-3">
-        <label asp-for="Recipient" class="form-label"></label>
-        <input asp-for="Recipient" class="form-control" />
-    </div>
-
-    <div class="mb-3">
-        <label asp-for="Amount" class="form-label"></label>
-        <input asp-for="Amount" class="form-control" type="number" step="0.01" />
-    </div>
-
-    <div class="mb-3">
-        <label asp-for="Fee" class="form-label"></label>
-        <input asp-for="Fee" class="form-control" type="number" step="0.01" />
-    </div>
-
-    <button type="submit" class="btn btn-primary">Save money order</button>
-    <a asp-action="Index" class="btn btn-secondary">Back</a>
 </form>

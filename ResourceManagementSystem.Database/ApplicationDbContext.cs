@@ -1,16 +1,1 @@
-﻿using Microsoft.EntityFrameworkCore;
-
-namespace ResourceManagementSystem.Data
-{
-    public class ApplicationDbContext : DbContext
-    {
-        public ApplicationDbContext(DbContextOptions<ApplicationDbContext> options) : base(options)
-        {
-        }
-
-        protected override void OnModelCreating(ModelBuilder modelBuilder)
-        {
-            
-        }
-    }
-}
+// Removed in Week 2: EF Core is not used (no ORM this week). Run scripts\finalize-week2.ps1 to delete this file.

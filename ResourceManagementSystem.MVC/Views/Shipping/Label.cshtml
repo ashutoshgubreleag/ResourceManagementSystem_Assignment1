@@ -1,0 +1,27 @@
+@model ShippingOrderEntity
+@{
+    ViewData["Title"] = $"Label {Model.TrackingNumber}";
+}
+<div class="page-head no-print">
+    <div>
+        <h1>Shipping label preview</h1>
+        <p class="lead">Status: <span class="badge">@Model.Status</span> · transaction <a asp-controller="Transaction" asp-action="Details" asp-route-id="@Model.TransactionId">@Model.TransactionId</a></p>
+    </div>
+</div>
+<div class="label-sheet">
+    <div class="row"><strong>ApexPost</strong><span class="spacer"></span><span class="service">@Model.ServiceLevel.ToString().ToUpperInvariant()</span></div>
+    <div class="from">From: ApexPost branch @Model.BranchCode · lodged @Model.CreatedAt.ToString("dd MMM yyyy")</div>
+    <div class="to">
+        @if (Model.Recipient is { } to)
+        {
+            <strong>@to.RecipientName</strong><br />@to.Line1<br />@($"{to.City} {to.State} {to.Postcode}")
+        }
+        else
+        {
+            <em>No recipient recorded</em>
+        }
+    </div>
+    <div>@Model.ShippingType · zone @Model.ZoneCode · @Model.Weight (charged @Model.ChargeableWeight) · @Model.Dimensions</div>
+    <div>Postage @Model.Price (ex tax)</div>
+    <div class="barcode">||| @Model.TrackingNumber |||</div>
+</div>

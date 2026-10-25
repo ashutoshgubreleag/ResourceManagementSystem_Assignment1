@@ -1,13 +1,6 @@
-﻿<Project Sdk="Microsoft.NET.Sdk">
-
-  <PropertyGroup>
-    <TargetFramework>net10.0</TargetFramework>
-    <ImplicitUsings>enable</ImplicitUsings>
-    <Nullable>enable</Nullable>
-  </PropertyGroup>
-
+<Project Sdk="Microsoft.NET.Sdk">
+  <!-- Repository abstractions and the async JSON-file implementation. Swapped for a database next week. -->
   <ItemGroup>
     <ProjectReference Include="..\ResourceManagementSystem.Database\ResourceManagementSystem.Database.csproj" />
   </ItemGroup>
-
 </Project>

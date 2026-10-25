@@ -1,22 +1,36 @@
-using System;
+using System.Diagnostics.CodeAnalysis;
+using System.Text.RegularExpressions;
 
 namespace ResourceManagementSystem.Models.ValueObjects;
 
-public readonly record struct Sku
+/// <summary>Stock keeping unit such as <c>PKG-001</c>.</summary>
+public readonly partial record struct Sku
 {
-    public string Value { get; }
-
     public Sku(string value)
     {
-        if (string.IsNullOrWhiteSpace(value))
-            throw new ArgumentException("SKU is required.", nameof(value));
+        var normalised = value?.Trim().ToUpperInvariant() ?? string.Empty;
+        if (!Pattern().IsMatch(normalised))
+        {
+            throw new ArgumentException($"'{value}' is not a valid SKU (expected AAA-000).", nameof(value));
+        }
 
-        Value = value.Trim().ToUpperInvariant();
+        _value = normalised;
+    }
+
+    private readonly string? _value;
+
+    /// <summary>The normalised value (empty for <c>default</c>).</summary>
+    public string Value => _value ?? string.Empty;
+
+    public static bool TryParse(string? value, [NotNullWhen(true)] out Sku? sku)
+    {
+        var normalised = value?.Trim().ToUpperInvariant() ?? string.Empty;
+        sku = Pattern().IsMatch(normalised) ? new Sku(normalised) : null;
+        return sku is not null;
     }
 
     public override string ToString() => Value;
 
-    public static implicit operator string(Sku sku) => sku.Value;
-
-    public static implicit operator Sku(string value) => new(value);
+    [GeneratedRegex("^[A-Z]{3}-[0-9]{3}$")]
+    private static partial Regex Pattern();
 }

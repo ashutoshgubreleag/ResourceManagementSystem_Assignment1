@@ -32,7 +32,6 @@ public enum PaymentMethod
 {
     Cash,
     Card,
-    BankTransfer,
     MobileWallet
 }
 
@@ -46,8 +45,8 @@ public enum TransactionStatus
 
 public enum ShippingType
 {
-    Parcel,
-    Letter
+    Letter,
+    Parcel
 }
 
 public enum ShippingServiceLevel
@@ -57,39 +56,49 @@ public enum ShippingServiceLevel
     Registered
 }
 
-public enum DestinationZone
+public enum ShipmentStatus
 {
-    Local,
-    Regional,
-    National,
-    International
+    Quoted,
+    Lodged,
+    Cancelled
 }
 
 public enum MoneyOrderStatus
 {
-    Drafted,
-    Approved,
-    Rejected,
-    Paid
+    Pending,
+    Issued,
+    Cancelled
 }
 
 public enum VerificationResult
 {
-    Pass,
-    Fail,
-    Pending
+    Passed,
+    Failed
 }
 
 public enum DocumentType
 {
     Passport,
-    DriverLicense,
-    NationalId,
-    ResidencePermit
+    DriverLicence,
+    NationalId
 }
 
+/// <summary>
+/// Discriminator for a basket line. A transaction is a composition of lines; each line
+/// points at the record that backs it (product SKU, shipment, money order, verification).
+/// </summary>
 public enum TransactionLineType
 {
     RetailItem,
-    Service
+    Shipping,
+    MoneyOrder,
+    IdentityVerification
+}
+
+public enum NotificationType
+{
+    LowStock,
+    HighValueMoneyOrder,
+    TransactionVoided,
+    TransactionRefunded
 }

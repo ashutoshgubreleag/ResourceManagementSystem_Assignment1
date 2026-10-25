@@ -1,33 +1,21 @@
-@model ResourceManagementSystem.Database.Models.TransactionEntity
+@model OpenTransactionViewModel
 @{
-    ViewData["Title"] = "Create transaction";
+    ViewData["Title"] = "New counter transaction";
 }
-
-<h2>Create counter transaction</h2>
-
-<form asp-action="Create" method="post">
-    <div asp-validation-summary="All" class="text-danger"></div>
-
-    <div class="mb-3">
-        <label asp-for="BranchCode" class="form-label">Branch code</label>
-        <input asp-for="BranchCode" class="form-control" />
+<h1>New counter transaction</h1>
+<p class="lead">@Model.BranchName (<span class="mono">@Model.BranchCode</span>). Choose the counter terminal you are serving from.</p>
+<form asp-action="Create" method="post" class="card stack">
+    <partial name="_ValidationSummary" />
+    <div class="form-grid">
+        <div>
+            <label asp-for="CounterTerminalId"></label>
+            <select asp-for="CounterTerminalId">
+                @foreach (var c in Model.Counters)
+                {
+                    <option value="@c.Id">@c.Name</option>
+                }
+            </select>
+        </div>
     </div>
-
-    <div class="mb-3">
-        <label asp-for="CounterTerminalId" class="form-label">Counter terminal</label>
-        <input asp-for="CounterTerminalId" class="form-control" type="number" />
-    </div>
-
-    <div class="mb-3">
-        <label asp-for="ClerkStaffId" class="form-label">Clerk staff id</label>
-        <input asp-for="ClerkStaffId" class="form-control" type="number" />
-    </div>
-
-    <div class="mb-3">
-        <label asp-for="PaymentMethod" class="form-label"></label>
-        <select asp-for="PaymentMethod" class="form-select" asp-items="Html.GetEnumSelectList<ResourceManagementSystem.Database.Models.PaymentMethod>()"></select>
-    </div>
-
-    <button type="submit" class="btn btn-primary">Create transaction</button>
-    <a asp-action="Index" class="btn btn-secondary">Back</a>
+    <div class="row"><button type="submit" class="btn brand">Open basket</button></div>
 </form>

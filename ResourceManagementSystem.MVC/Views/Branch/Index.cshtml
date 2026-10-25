@@ -1,33 +1,53 @@
-@model List<ResourceManagementSystem.Database.Models.BranchEntity>
+@model IReadOnlyList<BranchEntity>
 @{
     ViewData["Title"] = "Branches";
+    var role = User.StaffRole;
 }
-
-<div class="d-flex justify-content-between align-items-center mb-3">
-    <h2>Branches</h2>
-    <a asp-action="Create" class="btn btn-primary">Add branch</a>
+<div class="page-head">
+    <div>
+        <h1>Branches</h1>
+        <p class="lead">Branch codes, opening hours, status and counter terminals.</p>
+    </div>
+    @if (role == StaffRole.Administrator)
+    {
+        <a class="btn" asp-action="Create">Add branch</a>
+    }
 </div>
-
-<table class="table table-striped table-bordered">
-    <thead>
-        <tr>
-            <th>Code</th>
-            <th>Name</th>
-            <th>Region</th>
-            <th>Status</th>
-            <th>Opening hours</th>
-        </tr>
-    </thead>
-    <tbody>
-        @foreach (var branch in Model)
-        {
-            <tr>
-                <td>@branch.BranchCode</td>
-                <td>@branch.Name</td>
-                <td>@branch.Region</td>
-                <td>@branch.Status</td>
-                <td>@branch.OpeningHours</td>
-            </tr>
-        }
-    </tbody>
-</table>
+<div class="card table-wrap">
+    <table>
+        <thead>
+            <tr><th>Code</th><th>Name</th><th>Region</th><th>Opening hours</th><th>Counters</th><th>Status</th><th></th></tr>
+        </thead>
+        <tbody>
+            @foreach (var b in Model)
+            {
+                var canToggle = role == StaffRole.Administrator || (role == StaffRole.BranchManager && User.BranchCode == b.BranchCode);
+                <tr>
+                    <td class="mono">@b.BranchCode</td>
+                    <td><a asp-action="Dashboard" asp-route-branchCode="@b.BranchCode.Value">@b.Name</a></td>
+                    <td>@b.Region</td>
+                    <td>@b.OpeningHours</td>
+                    <td>@string.Join(", ", b.Counters.Where(c => c.IsActive).Select(c => c.Name))</td>
+                    <td><span class="badge @(b.Status == BranchStatus.Active ? "ok" : "bad")">@b.Status</span></td>
+                    <td class="row">
+                        @if (role == StaffRole.Administrator)
+                        {
+                            <a class="btn small secondary" asp-action="Edit" asp-route-branchCode="@b.BranchCode.Value">Edit</a>
+                        }
+                        @if (canToggle)
+                        {
+                            var next = b.Status == BranchStatus.Active ? BranchStatus.Closed : BranchStatus.Active;
+                            <form class="inline" asp-action="SetStatus" asp-route-branchCode="@b.BranchCode.Value" method="post">
+                                <input type="hidden" name="status" value="@next" />
+                                <button class="btn small @(next == BranchStatus.Closed ? "danger" : "")" type="submit"
+                                        data-confirm="@(next == BranchStatus.Closed ? "Close this branch? It will stop accepting transactions." : "Reopen this branch?")">
+                                    @(next == BranchStatus.Closed ? "Close" : "Reopen")
+                                </button>
+                            </form>
+                        }
+                    </td>
+                </tr>
+            }
+        </tbody>
+    </table>
+</div>

@@ -1,82 +1,176 @@
 using ResourceManagementSystem.Database.Models;
+using ResourceManagementSystem.Models.Exceptions;
+using ResourceManagementSystem.Models.Validation;
+using ResourceManagementSystem.Models.ValueObjects;
 using ResourceManagementSystem.Repositories;
+using ResourceManagementSystem.Repositories.Specifications;
+using ResourceManagementSystem.Services.Caching;
+using ResourceManagementSystem.Services.Common;
+using ResourceManagementSystem.Services.Events;
 
 namespace ResourceManagementSystem.Services.Inventory;
 
-public class InventoryService : IInventoryService
+public sealed class InventoryService(
+    IBaseEntityRepository<BranchStockEntity> stock,
+    IReferenceDataCache referenceData,
+    BranchLockProvider locks,
+    BusinessRules rules,
+    IApexPostEvents events,
+    TimeProvider clock) : IInventoryService
 {
-    private readonly IBaseEntityRepository<BranchStockEntity> _stockRepository;
+    public Task<IReadOnlyList<BranchStockEntity>> GetStockForBranchAsync(BranchCode branch, CancellationToken cancellationToken) =>
+        stock.FindAsync(ForBranch(branch), cancellationToken).AsTask();
 
-    public InventoryService(IBaseEntityRepository<BranchStockEntity> stockRepository)
+    public async Task<int> GetAvailableQuantityAsync(BranchCode branch, Sku sku, CancellationToken cancellationToken)
     {
-        _stockRepository = stockRepository;
+        var rows = await stock.FindAsync(ForBranch(branch).And(ForSku(sku)), cancellationToken).ConfigureAwait(false);
+        return rows.Sum(r => r.QuantityOnHand);
     }
 
-    public BranchStockEntity AddStock(BranchStockEntity stockItem)
+    public async Task DeductAsync(BranchCode branch, IReadOnlyCollection<StockQuantity> items, CancellationToken cancellationToken)
     {
-        if (stockItem == null) throw new ArgumentNullException(nameof(stockItem));
-        if (string.IsNullOrWhiteSpace(stockItem.BranchCode)) throw new InvalidOperationException("Branch code is required.");
-        if (string.IsNullOrWhiteSpace(stockItem.Sku)) throw new InvalidOperationException("SKU is required.");
-
-        var existing = _stockRepository.GetAll().FirstOrDefault(item =>
-            string.Equals(item.BranchCode, stockItem.BranchCode, StringComparison.OrdinalIgnoreCase)
-            && string.Equals(item.Sku, stockItem.Sku, StringComparison.OrdinalIgnoreCase));
-
-        if (existing != null)
+        ArgumentNullException.ThrowIfNull(items);
+        if (items.Count == 0)
         {
-            existing.QuantityOnHand += stockItem.QuantityOnHand;
-            existing.UpdatedAt = DateTime.UtcNow;
-            var updated = _stockRepository.Update(existing);
-            if (!updated) throw new InvalidOperationException("Unable to update branch stock.");
-            return existing;
+            return;
         }
 
-        stockItem.UpdatedAt = DateTime.UtcNow;
-        return _stockRepository.Add(stockItem);
+        // Read-check-write must be atomic per branch: two counters selling the last item.
+        using var _ = await locks.AcquireAsync(branch, cancellationToken).ConfigureAwait(false);
+
+        var rows = (await stock.FindAsync(ForBranch(branch), cancellationToken).ConfigureAwait(false))
+            .ToDictionary(r => r.Sku);
+
+        // Check every line first so a failure changes nothing.
+        foreach (var group in items.GroupBy(i => i.Sku))
+        {
+            var wanted = group.Sum(i => i.Quantity);
+            var onHand = rows.TryGetValue(group.Key, out var row) ? row.QuantityOnHand : 0;
+            if (wanted > onHand)
+            {
+                throw new BusinessRuleViolationException(
+                    "STOCK_INSUFFICIENT",
+                    $"Insufficient stock for {group.Key} at {branch}: {onHand} on hand, {wanted} requested.");
+            }
+        }
+
+        var changed = new List<BranchStockEntity>();
+        var crossedIntoLow = new List<BranchStockEntity>();
+        foreach (var group in items.GroupBy(i => i.Sku))
+        {
+            var row = rows[group.Key];
+            var wasLow = rules.IsLowStock(row, rules.DefaultLowStockThreshold);
+            row.QuantityOnHand -= group.Sum(i => i.Quantity);
+            row.UpdatedAt = clock.GetUtcNow();
+            changed.Add(row);
+            if (!wasLow && rules.IsLowStock(row, rules.DefaultLowStockThreshold))
+            {
+                crossedIntoLow.Add(row);
+            }
+        }
+
+        await stock.UpdateRangeAsync(changed, cancellationToken).ConfigureAwait(false);
+        await PublishLowStockAsync(crossedIntoLow, cancellationToken).ConfigureAwait(false);
     }
 
-    public IEnumerable<BranchStockEntity> GetAllStock() => _stockRepository.GetAll();
-
-    public IEnumerable<BranchStockEntity> GetStockForBranch(string branchCode)
+    public async Task RestockAsync(BranchCode branch, IReadOnlyCollection<StockQuantity> items, CancellationToken cancellationToken)
     {
-        if (string.IsNullOrWhiteSpace(branchCode)) return Enumerable.Empty<BranchStockEntity>();
-        return GetAllStock()
-            .Where(item => string.Equals(item.BranchCode, branchCode, StringComparison.OrdinalIgnoreCase));
+        ArgumentNullException.ThrowIfNull(items);
+        if (items.Count == 0)
+        {
+            return;
+        }
+
+        using var _ = await locks.AcquireAsync(branch, cancellationToken).ConfigureAwait(false);
+        var rows = (await stock.FindAsync(ForBranch(branch), cancellationToken).ConfigureAwait(false)).ToDictionary(r => r.Sku);
+        var changed = new List<BranchStockEntity>();
+        foreach (var group in items.GroupBy(i => i.Sku))
+        {
+            if (rows.TryGetValue(group.Key, out var row))
+            {
+                row.QuantityOnHand += group.Sum(i => i.Quantity);
+                row.UpdatedAt = clock.GetUtcNow();
+                changed.Add(row);
+            }
+        }
+
+        if (changed.Count > 0)
+        {
+            await stock.UpdateRangeAsync(changed, cancellationToken).ConfigureAwait(false);
+        }
     }
 
-    public int GetAvailableQuantity(string branchCode, string sku)
+    public async Task<BranchStockEntity> AdjustAsync(StockAdjustmentCommand command, StaffContext actor, CancellationToken cancellationToken)
     {
-        if (string.IsNullOrWhiteSpace(branchCode) || string.IsNullOrWhiteSpace(sku)) return 0;
+        ArgumentNullException.ThrowIfNull(command);
+        ArgumentNullException.ThrowIfNull(actor);
+        ReflectionValidator.EnsureValid(command);
 
-        return _stockRepository.GetAll()
-            .Where(item => string.Equals(item.BranchCode, branchCode, StringComparison.OrdinalIgnoreCase)
-                && string.Equals(item.Sku, sku, StringComparison.OrdinalIgnoreCase))
-            .Sum(item => item.QuantityOnHand);
+        var branch = new BranchCode(command.BranchCode);
+        var sku = new Sku(command.Sku);
+        if (!(actor.IsAdministrator || (actor.IsBranchManager && actor.BranchCode == branch)))
+        {
+            throw new ForbiddenOperationException("Only the branch manager or an administrator can adjust stock.");
+        }
+
+        var products = await referenceData.GetProductsAsync(cancellationToken).ConfigureAwait(false);
+        if (!products.ContainsKey(sku))
+        {
+            throw new CommandValidationException(nameof(command.Sku), $"Unknown SKU {sku}.");
+        }
+
+        using var _ = await locks.AcquireAsync(branch, cancellationToken).ConfigureAwait(false);
+        var row = (await stock.FindAsync(ForBranch(branch).And(ForSku(sku)), cancellationToken).ConfigureAwait(false)).FirstOrDefault();
+
+        if (row is null)
+        {
+            row = new BranchStockEntity { BranchCode = branch, Sku = sku, ReorderThreshold = rules.DefaultLowStockThreshold };
+            if (command.QuantityChange < 0)
+            {
+                throw new BusinessRuleViolationException("STOCK_INSUFFICIENT", $"There is no {sku} stock at {branch} to write off.");
+            }
+
+            row.QuantityOnHand = command.QuantityChange;
+            row.UpdatedAt = clock.GetUtcNow();
+            return await stock.AddAsync(row, cancellationToken).ConfigureAwait(false);
+        }
+
+        var wasLow = rules.IsLowStock(row, rules.DefaultLowStockThreshold);
+        if (row.QuantityOnHand + command.QuantityChange < 0)
+        {
+            throw new BusinessRuleViolationException("STOCK_INSUFFICIENT", $"Cannot remove {-command.QuantityChange}; only {row.QuantityOnHand} of {sku} on hand.");
+        }
+
+        row.QuantityOnHand += command.QuantityChange;
+        row.UpdatedAt = clock.GetUtcNow();
+        await stock.UpdateAsync(row, cancellationToken).ConfigureAwait(false);
+
+        if (!wasLow && rules.IsLowStock(row, rules.DefaultLowStockThreshold))
+        {
+            await PublishLowStockAsync([row], cancellationToken).ConfigureAwait(false);
+        }
+
+        return row;
     }
 
-    public void ReserveStock(string branchCode, string sku, int quantity)
+    private async Task PublishLowStockAsync(IReadOnlyCollection<BranchStockEntity> rows, CancellationToken cancellationToken)
     {
-        if (quantity < 0) throw new InvalidOperationException("Reserved quantity cannot be negative.");
-        var available = GetAvailableQuantity(branchCode, sku);
-        if (available < quantity)
-            throw new InvalidOperationException($"Insufficient stock for SKU '{sku}' at branch '{branchCode}'.");
+        if (rows.Count == 0)
+        {
+            return;
+        }
 
-        var item = _stockRepository.GetAll().FirstOrDefault(stock =>
-            string.Equals(stock.BranchCode, branchCode, StringComparison.OrdinalIgnoreCase)
-            && string.Equals(stock.Sku, sku, StringComparison.OrdinalIgnoreCase));
-
-        if (item == null) throw new InvalidOperationException($"No stock found for SKU '{sku}'.");
-
-        item.QuantityOnHand -= quantity;
-        item.UpdatedAt = DateTime.UtcNow;
-        var updated = _stockRepository.Update(item);
-        if (!updated) throw new InvalidOperationException("Unable to reserve stock.");
+        var products = await referenceData.GetProductsAsync(cancellationToken).ConfigureAwait(false);
+        foreach (var row in rows)
+        {
+            var name = products.TryGetValue(row.Sku, out var product) ? product.Name : row.Sku.Value;
+            events.Publish(new StockLowEventArgs(row.BranchCode, row.Sku, name, row.QuantityOnHand, row.ReorderThreshold, clock.GetUtcNow()));
+        }
     }
 
-    public IEnumerable<BranchStockEntity> GetLowStockItems(string branchCode, int threshold)
-    {
-        if (threshold < 0) threshold = 0;
-        return GetStockForBranch(branchCode)
-            .Where(item => item.QuantityOnHand <= Math.Max(item.ReorderThreshold, threshold));
-    }
+    private static Specification<BranchStockEntity> ForBranch(BranchCode branch) =>
+        Specification<BranchStockEntity>.Where(s => s.BranchCode == branch, "branch");
+
+    private static Specification<BranchStockEntity> ForSku(Sku sku) =>
+        Specification<BranchStockEntity>.Where(s => s.Sku == sku, "sku");
 }

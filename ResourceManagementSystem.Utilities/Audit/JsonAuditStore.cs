@@ -1,98 +1,76 @@
+using System.Text;
 using System.Text.Json;
 
-namespace ResourceManagementSystem.Utilities;
+namespace ResourceManagementSystem.Utilities.Audit;
 
-public sealed class JsonAuditStore : IAuditStore
+/// <summary>
+/// Append-only JSON Lines audit store (one JSON object per line).
+/// <list type="bullet">
+/// <item>Appending a line never rewrites earlier entries (the Week 1 store re-serialised the whole
+/// file on every write, which is slow and lets a crash corrupt history).</item>
+/// <item>Singleton with one <see cref="SemaphoreSlim"/>, so concurrent requests cannot interleave
+/// partial lines. The old store used <c>lock</c> on a <i>scoped</i> instance, which locked nothing.</item>
+/// <item>Fully async file I/O.</item>
+/// </list>
+/// </summary>
+public sealed class JsonAuditStore : IAuditStore, IDisposable
 {
-    private readonly object _syncRoot = new();
+    private static readonly JsonSerializerOptions LineOptions = new() { WriteIndented = false };
+    private readonly SemaphoreSlim _gate = new(1, 1);
     private readonly string _filePath;
 
-    public JsonAuditStore()
+    public JsonAuditStore(string filePath)
     {
-        _filePath = ResolveAuditPath();
-    }
-
-    public Task AppendAsync(AuditEntry entry, CancellationToken cancellationToken = default)
-    {
-        cancellationToken.ThrowIfCancellationRequested();
-
-        lock (_syncRoot)
+        ArgumentException.ThrowIfNullOrWhiteSpace(filePath);
+        _filePath = filePath;
+        var directory = Path.GetDirectoryName(_filePath);
+        if (!string.IsNullOrEmpty(directory))
         {
-            var directory = Path.GetDirectoryName(_filePath);
-            if (!string.IsNullOrWhiteSpace(directory))
-            {
-                Directory.CreateDirectory(directory);
-            }
-
-            var entries = ReadEntries();
-            entries.Add(entry);
-
-            var json = JsonSerializer.Serialize(entries, new JsonSerializerOptions
-            {
-                WriteIndented = true
-            });
-
-            File.WriteAllText(_filePath, json);
+            Directory.CreateDirectory(directory);
         }
-
-        return Task.CompletedTask;
     }
 
-    private List<AuditEntry> ReadEntries()
+    public string FilePath => _filePath;
+
+    public async Task AppendAsync(AuditEntry entry, CancellationToken cancellationToken)
+    {
+        ArgumentNullException.ThrowIfNull(entry);
+        var line = JsonSerializer.Serialize(entry, LineOptions) + "\n";
+        var bytes = Encoding.UTF8.GetBytes(line);
+
+        await _gate.WaitAsync(cancellationToken).ConfigureAwait(false);
+        try
+        {
+            await using var stream = new FileStream(_filePath, FileMode.Append, FileAccess.Write, FileShare.Read, 4096, useAsync: true);
+            await stream.WriteAsync(bytes, cancellationToken).ConfigureAwait(false);
+            await stream.FlushAsync(cancellationToken).ConfigureAwait(false);
+        }
+        finally
+        {
+            _gate.Release();
+        }
+    }
+
+    public async Task<IReadOnlyList<AuditEntry>> ReadRecentAsync(int take, CancellationToken cancellationToken)
     {
         if (!File.Exists(_filePath))
         {
-            return new List<AuditEntry>();
+            return [];
         }
 
-        var json = File.ReadAllText(_filePath);
-        if (string.IsNullOrWhiteSpace(json))
+        var entries = new List<AuditEntry>();
+        await using var stream = new FileStream(_filePath, FileMode.Open, FileAccess.Read, FileShare.ReadWrite, 4096, useAsync: true);
+        using var reader = new StreamReader(stream, Encoding.UTF8);
+        while (await reader.ReadLineAsync(cancellationToken).ConfigureAwait(false) is { } line)
         {
-            return new List<AuditEntry>();
-        }
-
-        return JsonSerializer.Deserialize<List<AuditEntry>>(json) ?? new List<AuditEntry>();
-    }
-
-    private static string ResolveAuditPath()
-    {
-        var candidateDirectories = new[]
-        {
-            Path.Combine(AppContext.BaseDirectory, "JSONs"),
-            Path.Combine(AppContext.BaseDirectory, "..", "..", "..", "..", "ResourceManagementSystem.Database", "JSONs"),
-            Path.Combine(AppContext.BaseDirectory, "..", "..", "..", "..", "..", "ResourceManagementSystem.Database", "JSONs")
-        };
-
-        foreach (var directory in candidateDirectories)
-        {
-            var fullDirectory = Path.GetFullPath(directory);
-            var candidate = Path.Combine(fullDirectory, "audit-log.json");
-            if (File.Exists(candidate))
+            if (line.Length > 0 && JsonSerializer.Deserialize<AuditEntry>(line, LineOptions) is { } entry)
             {
-                return candidate;
+                entries.Add(entry);
             }
         }
 
-        var databaseRoot = FindDatabaseRoot();
-        var fallbackDirectory = Path.Combine(databaseRoot, "JSONs");
-        Directory.CreateDirectory(fallbackDirectory);
-        return Path.Combine(fallbackDirectory, "audit-log.json");
+        return entries.OrderByDescending(e => e.TimestampUtc).Take(take).ToList();
     }
 
-    private static string FindDatabaseRoot()
-    {
-        var current = new DirectoryInfo(AppContext.BaseDirectory);
-        while (current is not null)
-        {
-            var candidate = Path.Combine(current.FullName, "ResourceManagementSystem.Database");
-            if (Directory.Exists(candidate))
-            {
-                return candidate;
-            }
-
-            current = current.Parent;
-        }
-
-        return AppContext.BaseDirectory;
-    }
+    public void Dispose() => _gate.Dispose();
 }

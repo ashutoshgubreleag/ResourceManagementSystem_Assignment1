@@ -1,121 +1,78 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.AspNetCore.Mvc.Rendering;
-using ResourceManagementSystem.Database.Models;
-using ResourceManagementSystem.Services.Branch;
+using ResourceManagementSystem.MVC.Models;
+using ResourceManagementSystem.MVC.Security;
 using ResourceManagementSystem.Services.Staff;
+using ResourceManagementSystem.Utilities.Filters;
 
 namespace ResourceManagementSystem.MVC.Controllers;
 
-[Authorize]
-public class StaffController : Controller
+public sealed class StaffController(IStaffService staff) : ApexPostController
 {
-    private readonly IStaffService _staffService;
-    private readonly IBranchService _branchService;
+    public async Task<IActionResult> Index(CancellationToken cancellationToken) =>
+        View(await staff.GetAllAsync(Actor, cancellationToken));
 
-    public StaffController(IStaffService staffService, IBranchService branchService)
-    {
-        _staffService = staffService;
-        _branchService = branchService;
-    }
-
-    public IActionResult Index()
-    {
-        var staff = _staffService.GetAll().OrderBy(s => s.Name).ToList();
-        return View(staff);
-    }
-
+    [Authorize(Policy = Policies.StaffManagers)]
     [HttpGet]
-    public IActionResult Create()
-    {
-        ViewBag.BranchOptions = BuildBranchSelectList();
-        return View(new StaffEntity { IsActive = true });
-    }
+    public IActionResult Create() => View(new StaffFormViewModel { HomeBranchCode = User.BranchCode.Value });
 
+    [Authorize(Policy = Policies.StaffManagers)]
     [HttpPost]
-    [ValidateAntiForgeryToken]
-    public IActionResult Create(StaffEntity model)
+    [Audited("Staff.Create", "Email", "Role", "HomeBranchCode")]
+    public async Task<IActionResult> Create(StaffFormViewModel model, CancellationToken cancellationToken)
     {
-        if (!ModelState.IsValid)
-        {
-            ViewBag.BranchOptions = BuildBranchSelectList();
-            return View(model);
-        }
-
-        try
-        {
-            _staffService.AddStaff(model);
-            return RedirectToAction(nameof(Index));
-        }
-        catch (Exception ex)
-        {
-            ViewBag.BranchOptions = BuildBranchSelectList();
-            ModelState.AddModelError(string.Empty, ex.Message);
-            return View(model);
-        }
+        ArgumentNullException.ThrowIfNull(model);
+        var created = await staff.CreateAsync(ToCommand(model), Actor, cancellationToken);
+        Flash($"{created.Name} added.");
+        return RedirectToAction(nameof(Index));
     }
 
+    [Authorize(Policy = Policies.StaffManagers)]
     [HttpGet]
-    public IActionResult Edit(int id)
+    public async Task<IActionResult> Edit(int id, CancellationToken cancellationToken)
     {
-        var staff = _staffService.GetById(id);
-        if (staff is null)
+        var member = await staff.GetByIdAsync(id, cancellationToken);
+        return View(new StaffFormViewModel
         {
-            return NotFound();
-        }
-
-        ViewBag.BranchOptions = BuildBranchSelectList();
-        return View(staff);
+            Id = member.Id,
+            Name = member.Name,
+            Email = member.Email,
+            Role = member.Role,
+            HomeBranchCode = member.HomeBranchCode.Value,
+            IsActive = member.IsActive,
+        });
     }
 
+    [Authorize(Policy = Policies.StaffManagers)]
     [HttpPost]
-    [ValidateAntiForgeryToken]
-    public IActionResult Edit(StaffEntity model)
+    [Audited("Staff.Update", "Id", "Role", "HomeBranchCode", "IsActive")]
+    public async Task<IActionResult> Edit(int id, StaffFormViewModel model, CancellationToken cancellationToken)
     {
-        if (!ModelState.IsValid)
-        {
-            ViewBag.BranchOptions = BuildBranchSelectList();
-            return View(model);
-        }
-
-        try
-        {
-            _staffService.UpdateStaff(model);
-            return RedirectToAction(nameof(Index));
-        }
-        catch (Exception ex)
-        {
-            ViewBag.BranchOptions = BuildBranchSelectList();
-            ModelState.AddModelError(string.Empty, ex.Message);
-            return View(model);
-        }
+        ArgumentNullException.ThrowIfNull(model);
+        model.Id = id;
+        var updated = await staff.UpdateAsync(ToCommand(model), Actor, cancellationToken);
+        Flash($"{updated.Name} updated.");
+        return RedirectToAction(nameof(Index));
     }
 
+    [Authorize(Policy = Policies.StaffManagers)]
     [HttpPost]
-    [ValidateAntiForgeryToken]
-    public IActionResult Deactivate(int id)
+    [Audited("Staff.Deactivate")]
+    public async Task<IActionResult> Deactivate(int id, CancellationToken cancellationToken)
     {
-        try
-        {
-            _staffService.DeactivateStaff(id);
-            return RedirectToAction(nameof(Index));
-        }
-        catch (Exception ex)
-        {
-            TempData["Error"] = ex.Message;
-            return RedirectToAction(nameof(Index));
-        }
+        await staff.DeactivateAsync(id, Actor, cancellationToken);
+        Flash("Staff member deactivated. They can no longer sign in or process transactions.");
+        return RedirectToAction(nameof(Index));
     }
 
-    private List<SelectListItem> BuildBranchSelectList()
+    private static SaveStaffCommand ToCommand(StaffFormViewModel model) => new()
     {
-        return _branchService.GetAll()
-            .OrderBy(b => b.BranchCode)
-            .Select(b => new SelectListItem
-            {
-                Value = b.BranchCode,
-                Text = $"{b.BranchCode} - {b.Name}"
-            })
-            .ToList();
-    }
+        Id = model.Id,
+        Name = model.Name,
+        Email = model.Email,
+        Role = model.Role,
+        HomeBranchCode = model.HomeBranchCode,
+        IsActive = model.IsActive,
+        InitialPassword = model.Password,
+    };
 }

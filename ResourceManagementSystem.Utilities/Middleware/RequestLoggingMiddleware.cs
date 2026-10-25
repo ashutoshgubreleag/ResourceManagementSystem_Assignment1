@@ -1,85 +1,47 @@
-﻿
 using System.Diagnostics;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Logging;
 
-namespace ResourceManagementSystem.Utilities;
+namespace ResourceManagementSystem.Utilities.Middleware;
 
-public sealed class RequestLoggingMiddleware
+/// <summary>
+/// Structured request log plus timing. The log is written in <c>finally</c> so requests that throw
+/// are timed and logged too. It sits outside the exception handler, so it records the final status
+/// (500) that the handler wrote rather than the 200 the response had when the exception occurred.
+/// </summary>
+public sealed partial class RequestLoggingMiddleware(RequestDelegate next, ILogger<RequestLoggingMiddleware> logger)
 {
-    private readonly RequestDelegate _next;
-    private readonly ILogger<RequestLoggingMiddleware> _logger;
-
-    public RequestLoggingMiddleware(
-        RequestDelegate next,
-        ILogger<RequestLoggingMiddleware> logger)
-    {
-        _next = next;
-        _logger = logger;
-    }
-
     public async Task InvokeAsync(HttpContext context)
     {
-        var stopwatch = Stopwatch.StartNew();
-
-        var correlationId =
-            context.Items[CorrelationIdMiddleware.ItemKey]?.ToString()
-            ?? context.TraceIdentifier;
-
-        var method = context.Request.Method;
-        var path = context.Request.Path.Value ?? "/";
-
+        ArgumentNullException.ThrowIfNull(context);
+        var started = Stopwatch.GetTimestamp();
+        var failed = false;
         try
         {
-            await _next(context);
+            await next(context).ConfigureAwait(false);
+        }
+        catch
+        {
+            failed = true;
+            throw;
         }
         finally
         {
-            stopwatch.Stop();
-
-            var statusCode = context.Response.StatusCode;
-            var elapsedMs = stopwatch.Elapsed.TotalMilliseconds;
-
-            using (_logger.BeginScope(
-                new Dictionary<string, object>
-                {
-                    ["CorrelationId"] = correlationId
-                }))
+            var elapsedMs = Stopwatch.GetElapsedTime(started).TotalMilliseconds;
+            var status = failed ? StatusCodes.Status500InternalServerError : context.Response.StatusCode;
+            var staffId = context.User.FindFirst("StaffId")?.Value ?? "anonymous";
+            var level = status switch
             {
-                if (statusCode >= 500)
-                {
-                    _logger.LogError(
-                        "HTTP {Method} {Path} responded {StatusCode} " +
-                        "in {ElapsedMs:F2} ms. CorrelationId: {CorrelationId}",
-                        method,
-                        path,
-                        statusCode,
-                        elapsedMs,
-                        correlationId);
-                }
-                else if (statusCode >= 400)
-                {
-                    _logger.LogWarning(
-                        "HTTP {Method} {Path} responded {StatusCode} " +
-                        "in {ElapsedMs:F2} ms. CorrelationId: {CorrelationId}",
-                        method,
-                        path,
-                        statusCode,
-                        elapsedMs,
-                        correlationId);
-                }
-                else
-                {
-                    _logger.LogInformation(
-                        "HTTP {Method} {Path} responded {StatusCode} " +
-                        "in {ElapsedMs:F2} ms. CorrelationId: {CorrelationId}",
-                        method,
-                        path,
-                        statusCode,
-                        elapsedMs,
-                        correlationId);
-                }
-            }
+                >= 500 => LogLevel.Error,
+                >= 400 => LogLevel.Warning,
+                _ => LogLevel.Information,
+            };
+
+            // Path only: query strings can contain personal data and are not logged.
+            LogRequest(level, context.Request.Method, context.Request.Path.Value ?? "/", status, Math.Round(elapsedMs, 2), staffId);
         }
     }
+
+    [LoggerMessage(Message = "HTTP {Method} {Path} responded {StatusCode} in {ElapsedMs} ms (staff {StaffId})")]
+    private partial void LogRequest(LogLevel level, string method, string path, int statusCode, double elapsedMs, string staffId);
 }

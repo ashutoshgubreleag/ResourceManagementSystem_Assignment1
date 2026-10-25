@@ -1,43 +1,78 @@
 using ResourceManagementSystem.Database.Models;
+using ResourceManagementSystem.Models.ValueObjects;
+using ResourceManagementSystem.Services.Common;
 
 namespace ResourceManagementSystem.Services.Shipping;
 
-public class DefaultShippingPricingStrategy : IShippingPricingStrategy
+/// <summary>
+/// Zone + weight pricing:
+/// <list type="number">
+/// <item>Chargeable weight = actual weight, or volumetric weight for parcels if larger.</item>
+/// <item>Base postage from the zone rate card (pattern match on type and weight band).</item>
+/// <item>Service loading by service level (pattern match).</item>
+/// <item>Surcharges from a list of <see cref="ShippingSurchargeRule"/> delegates (fuel, remote area, oversize).</item>
+/// <item>Tax: domestic Standard, international Exempt.</item>
+/// </list>
+/// </summary>
+public sealed class DefaultShippingPricingStrategy : IShippingPricingStrategy
 {
-    private static readonly Dictionary<DestinationZone, decimal> ZoneRateMap = new()
+    private readonly IReadOnlyList<ShippingSurchargeRule> _surcharges;
+
+    public DefaultShippingPricingStrategy() : this(DefaultSurcharges) { }
+
+    public DefaultShippingPricingStrategy(IReadOnlyList<ShippingSurchargeRule> surcharges) => _surcharges = surcharges;
+
+    /// <summary>The standard surcharge rules. Each is a plain delegate, so adding one is a one-liner.</summary>
+    public static IReadOnlyList<ShippingSurchargeRule> DefaultSurcharges { get; } =
+    [
+        ctx => ctx.FuelSurchargeRate > 0
+            ? new SurchargeLine("Fuel surcharge", BaseFor(ctx, ChargeableWeightFor(ctx)).ApplyRate(ctx.FuelSurchargeRate))
+            : null,
+        ctx => ctx.Zone.IsRemote ? new SurchargeLine("Remote area", new Money(3.00m)) : null,
+        ctx => ctx is { ShippingType: ShippingType.Parcel, Dimensions.LongestSideCm: > 100m }
+            ? new SurchargeLine("Oversize handling", new Money(12.00m))
+            : null,
+    ];
+
+    public ShippingQuote Price(ShippingPricingContext context)
     {
-        [DestinationZone.Local] = 2.50m,
-        [DestinationZone.Regional] = 4.00m,
-        [DestinationZone.National] = 7.00m,
-        [DestinationZone.International] = 12.00m
-    };
+        ArgumentNullException.ThrowIfNull(context);
 
-    private static readonly Dictionary<ShippingServiceLevel, decimal> ServiceMultipliers = new()
-    {
-        [ShippingServiceLevel.Standard] = 1.00m,
-        [ShippingServiceLevel.Express] = 1.75m,
-        [ShippingServiceLevel.Registered] = 2.25m
-    };
+        var chargeable = ChargeableWeightFor(context);
+        var basePostage = BaseFor(context, chargeable);
 
-    public decimal CalculatePrice(ShippingOrderEntity order)
-    {
-        if (order == null) throw new ArgumentNullException(nameof(order));
-
-        var baseRate = ZoneRateMap[order.DestinationZone];
-        var multiplier = ServiceMultipliers[order.ServiceLevel];
-
-        if (order.ShippingType == ShippingType.Letter)
+        var serviceLoading = context.ServiceLevel switch
         {
-            var letterWeight = Math.Max(order.WeightKg, 0.25m);
-            var price = (baseRate * multiplier) + (letterWeight * 0.35m);
-            return Math.Round(price, 2, MidpointRounding.AwayFromZero);
-        }
+            ShippingServiceLevel.Standard => Money.Zero,
+            ShippingServiceLevel.Express => basePostage.ApplyRate(0.60m),
+            ShippingServiceLevel.Registered => new Money(4.50m), // signature on delivery
+            _ => throw new ArgumentOutOfRangeException(nameof(context), context.ServiceLevel, "Unknown service level."),
+        };
 
-        var actualWeight = Math.Max(order.WeightKg, 0.25m);
-        var volumetricWeight = order.VolumeCm3 > 0 ? order.VolumeCm3 / 5000m : 0m;
-        var chargeableWeight = Math.Max(actualWeight, volumetricWeight);
+        var surcharges = _surcharges
+            .Select(rule => rule(context))
+            .OfType<SurchargeLine>()
+            .ToList();
 
-        var parcelPrice = (baseRate * multiplier) + (chargeableWeight * 0.75m);
-        return Math.Round(parcelPrice, 2, MidpointRounding.AwayFromZero);
+        var net = (basePostage + serviceLoading + surcharges.Select(s => s.Amount).Total()).RoundedToCents;
+        var taxCategory = TaxRules.CategoryFor(TransactionLineType.Shipping, isInternational: context.Zone.IsInternational);
+
+        return new ShippingQuote(context, chargeable, basePostage, serviceLoading, surcharges, net, taxCategory, TaxRules.TaxOn(net, taxCategory));
     }
+
+    private static Weight ChargeableWeightFor(ShippingPricingContext context) => context.ShippingType switch
+    {
+        ShippingType.Parcel => Weight.Max(context.ActualWeight, context.Dimensions.VolumetricWeight),
+        _ => context.ActualWeight,
+    };
+
+    private static Money BaseFor(ShippingPricingContext context, Weight chargeable) =>
+        (context.ShippingType, chargeable.Kilograms) switch
+        {
+            (ShippingType.Letter, <= 0.25m) => context.Zone.LetterBaseRate,
+            (ShippingType.Letter, _) => context.Zone.LetterBaseRate * 2,                 // large letter
+            (ShippingType.Parcel, <= 0.5m) => context.Zone.ParcelBaseRate,              // satchel band
+            (ShippingType.Parcel, var kg) => context.Zone.ParcelBaseRate + context.Zone.PerKgRate * Math.Ceiling(kg - 0.5m),
+            _ => throw new ArgumentOutOfRangeException(nameof(context), context.ShippingType, "Unknown shipping type."),
+        };
 }

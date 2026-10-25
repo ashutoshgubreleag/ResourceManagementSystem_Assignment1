@@ -1,0 +1,31 @@
+@model ShipmentFormViewModel
+@{
+    ViewData["Title"] = "Add letter or parcel";
+}
+<h1>Add letter or parcel</h1>
+<p class="lead">Transaction @Model.TransactionId. The price comes from the zone rate card, service level, live fuel surcharge and tax rules.</p>
+<form asp-action="Add" asp-route-id="@Model.TransactionId" method="post" class="card stack">
+    <partial name="_ValidationSummary" />
+    <h3>Item</h3>
+    <div class="form-grid">
+        <div><label asp-for="ShippingType"></label><select asp-for="ShippingType" asp-items="Html.GetEnumSelectList<ShippingType>()"></select></div>
+        <div><label asp-for="ServiceLevel"></label><select asp-for="ServiceLevel" asp-items="Html.GetEnumSelectList<ShippingServiceLevel>()"></select></div>
+        <div><label asp-for="ZoneCode"></label><select asp-for="ZoneCode"><partial name="_ZoneOptions" model="Model.ZoneCode" /></select></div>
+        <div><label asp-for="WeightKg"></label><input asp-for="WeightKg" type="number" step="0.001" /><span asp-validation-for="WeightKg" class="field-error"></span></div>
+        <div><label asp-for="LengthCm"></label><input asp-for="LengthCm" type="number" step="0.1" /></div>
+        <div><label asp-for="WidthCm"></label><input asp-for="WidthCm" type="number" step="0.1" /></div>
+        <div><label asp-for="HeightCm"></label><input asp-for="HeightCm" type="number" step="0.1" /></div>
+    </div>
+    <h3>Recipient</h3>
+    <div class="form-grid">
+        <div><label asp-for="RecipientName"></label><input asp-for="RecipientName" /><span asp-validation-for="RecipientName" class="field-error"></span></div>
+        <div><label asp-for="Line1"></label><input asp-for="Line1" /><span asp-validation-for="Line1" class="field-error"></span></div>
+        <div><label asp-for="City"></label><input asp-for="City" /><span asp-validation-for="City" class="field-error"></span></div>
+        <div><label asp-for="State"></label><input asp-for="State" /><span asp-validation-for="State" class="field-error"></span></div>
+        <div><label asp-for="Postcode"></label><input asp-for="Postcode" /><span asp-validation-for="Postcode" class="field-error"></span></div>
+    </div>
+    <div class="row">
+        <button type="submit" class="btn">Add to basket</button>
+        <a class="btn secondary" asp-controller="Transaction" asp-action="Details" asp-route-id="@Model.TransactionId">Back to basket</a>
+    </div>
+</form>

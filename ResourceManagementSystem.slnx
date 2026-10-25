@@ -1,10 +1,17 @@
 <Solution>
-  <Project Path="ResourceManagementSystem.Database/ResourceManagementSystem.Database.csproj" Id="674ac92d-aff3-4310-b705-c50302badb8f" />
-  <Project Path="ResourceManagementSystem.Models/ResourceManagementSystem.Models.csproj" Id="b5c78eb3-cc31-430e-bc30-e1cf1d9c1102" />
-  <Project Path="ResourceManagementSystem.MVC/ResourceManagementSystem.MVC.csproj" Id="a1c8b6c8-d989-4f1f-9a15-5d82f915998c" />
-  <Project Path="ResourceManagementSystem.Repositories/ResourceManagementSystem.Repositories.csproj" Id="2ba46867-15a0-4617-9a8e-a6e73d365ced" />
-  <Project Path="ResourceManagementSystem.Services/ResourceManagementSystem.Services.csproj" Id="d80e6c2c-db56-4be3-89a9-6fda1e9aae4a" />
+  <Folder Name="/Solution Items/">
+    <File Path="Directory.Build.props" />
+    <File Path="README.md" />
+    <File Path="DESIGN.md" />
+    <File Path="AUDIT-SAMPLE.json" />
+    <File Path="ApexPost-Postman-Collection.json" />
+    <File Path="scripts/finalize-week2.ps1" />
+  </Folder>
+  <Project Path="ResourceManagementSystem.Models/ResourceManagementSystem.Models.csproj" />
+  <Project Path="ResourceManagementSystem.Database/ResourceManagementSystem.Database.csproj" />
+  <Project Path="ResourceManagementSystem.Repositories/ResourceManagementSystem.Repositories.csproj" />
+  <Project Path="ResourceManagementSystem.Services/ResourceManagementSystem.Services.csproj" />
+  <Project Path="ResourceManagementSystem.Utilities/ResourceManagementSystem.Utilities.csproj" />
+  <Project Path="ResourceManagementSystem.MVC/ResourceManagementSystem.MVC.csproj" />
   <Project Path="ResourceManagementSystem.Tests/ResourceManagementSystem.Tests.csproj" />
-  <Project Path="ResourceManagementSystem.Utilities/ResourceManagementSystem.Utilities.csproj" Id="aeba2cf2-38fb-4cd6-9fd4-6df9f94d8bca" />
-  <Project Path="ResourceManagementSystem/ResourceManagementSystem.csproj" />
 </Solution>

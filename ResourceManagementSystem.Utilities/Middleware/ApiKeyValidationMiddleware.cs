@@ -1,99 +1,96 @@
-using Microsoft.AspNetCore.Http;
-using Microsoft.AspNetCore.Mvc;
-using Microsoft.Extensions.Configuration;
-using Microsoft.Extensions.Logging;
 using System.Security.Cryptography;
 using System.Text;
+using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
+using ResourceManagementSystem.Utilities.Options;
 
 namespace ResourceManagementSystem.Utilities.Middleware;
 
-public sealed class ApiKeyValidationMiddleware
+/// <summary>
+/// Validates <c>X-Api-Key</c> on endpoints marked <see cref="ApiKeyRequiredAttribute"/>.
+/// <list type="bullet">
+/// <item>Keys come from configuration (user-secrets / environment), never source code.</item>
+/// <item>500 when no partner key is configured: a deployment error must not look like a bad key, and
+/// must never fail open.</item>
+/// <item>401 for a missing or wrong key.</item>
+/// <item>Constant-time comparison: both values are hashed to fixed-length digests and compared with
+/// <see cref="CryptographicOperations.FixedTimeEquals"/>, and every configured key is checked (no early
+/// exit), so timing reveals neither the key nor which partner matched.</item>
+/// </list>
+/// On success the partner id is stored in <c>HttpContext.Items</c> for the per-partner rate limiter.
+/// </summary>
+public sealed partial class ApiKeyValidationMiddleware(
+    RequestDelegate next,
+    IOptionsMonitor<IntegrationOptions> options,
+    ILogger<ApiKeyValidationMiddleware> logger)
 {
-    private const string HeaderName = "x-api-key";
-    private readonly RequestDelegate _next;
-    private readonly IConfiguration _configuration;
-    private readonly ILogger<ApiKeyValidationMiddleware> _logger;
-
-    public ApiKeyValidationMiddleware(
-        RequestDelegate next,
-        IConfiguration configuration,
-        ILogger<ApiKeyValidationMiddleware> logger)
-    {
-        _next = next;
-        _configuration = configuration;
-        _logger = logger;
-    }
+    public const string PartnerItemKey = "IntegrationPartnerId";
 
     public async Task InvokeAsync(HttpContext context)
     {
-        var endpoint = context.GetEndpoint();
-
-        if (endpoint?.Metadata.GetMetadata<ApiKeyRequiredAttribute>() is null)
+        ArgumentNullException.ThrowIfNull(context);
+        if (context.GetEndpoint()?.Metadata.GetMetadata<ApiKeyRequiredAttribute>() is null)
         {
-            await _next(context);
+            await next(context).ConfigureAwait(false);
             return;
         }
 
-        if (context.Request.Path.StartsWithSegments("/health", StringComparison.OrdinalIgnoreCase))
-        {
-            await _next(context);
-            return;
-        }
+        var partners = options.CurrentValue.Partners
+            .Where(p => !string.IsNullOrWhiteSpace(p.Value))
+            .ToList();
 
-        var configuredKey = _configuration["Integration:ApiKey"]
-            ?? _configuration["ApiKeys:IntegrationKey"]
-            ?? _configuration["Authentication:ApiKey"];
-
-        if (string.IsNullOrWhiteSpace(configuredKey))
+        if (partners.Count == 0)
         {
-            _logger.LogError("API key is not configured for protected integration endpoint {Path}", context.Request.Path);
-            context.Response.StatusCode = StatusCodes.Status500InternalServerError;
-            context.Response.ContentType = "application/problem+json";
-            await context.Response.WriteAsJsonAsync(new ProblemDetails
+            LogNotConfigured(context.Request.Path.Value ?? "/");
+            await ProblemResponses.WriteAsync(context, new ProblemDetails
             {
-                Type = "https://httpstatuses.com/500",
-                Title = "Server configuration error",
                 Status = StatusCodes.Status500InternalServerError,
-                Detail = "The integration API key is not configured."
-            });
+                Title = "Integration not configured",
+                Detail = "The integration endpoint is not available. Contact ApexPost support.",
+            }).ConfigureAwait(false);
             return;
         }
 
-        var requestKey = context.Request.Headers[HeaderName].FirstOrDefault();
-        if (string.IsNullOrWhiteSpace(requestKey))
+        var supplied = context.Request.Headers[IntegrationOptions.ApiKeyHeaderName].ToString();
+        var partnerId = string.IsNullOrEmpty(supplied) ? null : Match(supplied, partners);
+        if (partnerId is null)
         {
-            _logger.LogWarning("Rejected integration request without API key. Path: {Path}; CorrelationId: {CorrelationId}", context.Request.Path, context.Items[CorrelationIdMiddleware.ItemKey]);
-            context.Response.StatusCode = StatusCodes.Status401Unauthorized;
-            context.Response.ContentType = "application/problem+json";
-            await context.Response.WriteAsJsonAsync(new ProblemDetails
+            LogRejected(context.Request.Path.Value ?? "/", string.IsNullOrEmpty(supplied) ? "missing" : "invalid");
+            context.Response.Headers.WWWAuthenticate = "ApiKey header=\"X-Api-Key\"";
+            await ProblemResponses.WriteAsync(context, new ProblemDetails
             {
-                Type = "https://httpstatuses.com/401",
-                Title = "Unauthorized",
                 Status = StatusCodes.Status401Unauthorized,
-                Detail = "A valid API key is required."
-            });
+                Title = "Unauthorized",
+                Detail = "A valid X-Api-Key header is required.",
+            }).ConfigureAwait(false);
             return;
         }
 
-        var configuredBytes = Encoding.UTF8.GetBytes(configuredKey);
-        var requestBytes = Encoding.UTF8.GetBytes(requestKey);
-
-        if (configuredBytes.Length != requestBytes.Length ||
-            !CryptographicOperations.FixedTimeEquals(configuredBytes, requestBytes))
-        {
-            _logger.LogWarning("Rejected integration request with invalid API key. Path: {Path}; CorrelationId: {CorrelationId}", context.Request.Path, context.Items[CorrelationIdMiddleware.ItemKey]);
-            context.Response.StatusCode = StatusCodes.Status401Unauthorized;
-            context.Response.ContentType = "application/problem+json";
-            await context.Response.WriteAsJsonAsync(new ProblemDetails
-            {
-                Type = "https://httpstatuses.com/401",
-                Title = "Unauthorized",
-                Status = StatusCodes.Status401Unauthorized,
-                Detail = "The supplied API key is invalid."
-            });
-            return;
-        }
-
-        await _next(context);
+        context.Items[PartnerItemKey] = partnerId;
+        await next(context).ConfigureAwait(false);
     }
+
+    private static string? Match(string supplied, List<KeyValuePair<string, string>> partners)
+    {
+        var suppliedHash = SHA256.HashData(Encoding.UTF8.GetBytes(supplied));
+        string? matched = null;
+        foreach (var (partner, key) in partners)
+        {
+            var expectedHash = SHA256.HashData(Encoding.UTF8.GetBytes(key));
+            if (CryptographicOperations.FixedTimeEquals(suppliedHash, expectedHash))
+            {
+                matched = partner; // keep looping: no early exit
+            }
+        }
+
+        return matched;
+    }
+
+    [LoggerMessage(Level = LogLevel.Error, Message = "Integration API key is not configured; rejected request to {Path}")]
+    private partial void LogNotConfigured(string path);
+
+    [LoggerMessage(Level = LogLevel.Warning, Message = "Rejected integration request to {Path}: API key {Reason}")]
+    private partial void LogRejected(string path, string reason);
 }

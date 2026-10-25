@@ -1,0 +1,24 @@
+@model IdentityVerificationFormViewModel
+@{
+    ViewData["Title"] = "Identity verification";
+}
+<h1>Identity verification</h1>
+<p class="lead">Transaction @Model.TransactionId. Check the document in person, then record the result. Only the last four characters of the document number are kept.</p>
+<form asp-action="Verify" asp-route-id="@Model.TransactionId" method="post" class="card stack" autocomplete="off">
+    <partial name="_ValidationSummary" />
+    <div class="form-grid">
+        <div><label asp-for="CustomerName"></label><input asp-for="CustomerName" /><span asp-validation-for="CustomerName" class="field-error"></span></div>
+        <div><label asp-for="DocumentType"></label><select asp-for="DocumentType" asp-items="Html.GetEnumSelectList<DocumentType>()"></select></div>
+        <div>
+            <label asp-for="DocumentNumber"></label>
+            <input asp-for="DocumentNumber" value="" autocomplete="off" />
+            <div class="help">Masked to ****1234 on save. Never stored or logged in full.</div>
+            <span asp-validation-for="DocumentNumber" class="field-error"></span>
+        </div>
+        <div><label asp-for="Result"></label><select asp-for="Result" asp-items="Html.GetEnumSelectList<VerificationResult>()"></select></div>
+    </div>
+    <div class="row">
+        <button type="submit" class="btn">Record verification</button>
+        <a class="btn secondary" asp-controller="Transaction" asp-action="Details" asp-route-id="@Model.TransactionId">Back to basket</a>
+    </div>
+</form>

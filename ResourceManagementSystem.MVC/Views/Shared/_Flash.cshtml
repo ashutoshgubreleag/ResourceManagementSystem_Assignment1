@@ -1,0 +1,12 @@
+@if (TempData["Success"] is string ok)
+{
+    <div class="alert ok" role="status">@ok</div>
+}
+@if (TempData["Error"] is string error)
+{
+    <div class="alert bad" role="alert">@error</div>
+}
+@if (TempData["ValidationErrors"] is string invalid)
+{
+    <div class="alert bad" role="alert">@invalid</div>
+}

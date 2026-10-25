@@ -1,87 +1,43 @@
-﻿
+using System.Globalization;
 using Microsoft.AspNetCore.Http;
-using Microsoft.Extensions.Configuration;
-using Microsoft.Extensions.Logging;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
+using ResourceManagementSystem.Utilities.Options;
 
-namespace ResourceManagementSystem.Utilities;
+namespace ResourceManagementSystem.Utilities.Middleware;
 
-public sealed class MaintenanceModeMiddleware
+/// <summary>
+/// Returns 503 with Retry-After while <c>MaintenanceMode:Enabled</c> is true. <c>/health</c> stays up so
+/// the load balancer can tell "deliberately paused" from "crashed". Uses IOptionsMonitor because the
+/// middleware is a singleton and the flag must be re-read on every request (reload-on-change).
+/// </summary>
+public sealed partial class MaintenanceModeMiddleware(
+    RequestDelegate next,
+    IOptionsMonitor<MaintenanceModeOptions> options,
+    ILogger<MaintenanceModeMiddleware> logger)
 {
-    private readonly RequestDelegate _next;
-    private readonly IConfiguration _configuration;
-    private readonly ILogger<MaintenanceModeMiddleware> _logger;
-
-    public MaintenanceModeMiddleware(
-        RequestDelegate next,
-        IConfiguration configuration,
-        ILogger<MaintenanceModeMiddleware> logger)
-    {
-        _next = next;
-        _configuration = configuration;
-        _logger = logger;
-    }
-
     public async Task InvokeAsync(HttpContext context)
     {
-        var enabled = _configuration.GetValue<bool>(
-            "MaintenanceMode:Enabled");
-
-        // Always allow health checks during maintenance.
-        if (context.Request.Path.Equals(
-                "/health",
-                StringComparison.OrdinalIgnoreCase))
+        ArgumentNullException.ThrowIfNull(context);
+        var current = options.CurrentValue;
+        if (!current.Enabled || current.AlwaysAvailablePaths.Any(p => context.Request.Path.StartsWithSegments(p, StringComparison.OrdinalIgnoreCase)))
         {
-            await _next(context);
+            await next(context).ConfigureAwait(false);
             return;
         }
 
-        if (!enabled)
+        LogRejected(context.Request.Method, context.Request.Path.Value ?? "/");
+        context.Response.StatusCode = StatusCodes.Status503ServiceUnavailable;
+        context.Response.Headers.RetryAfter = Math.Max(1, current.RetryAfterSeconds).ToString(CultureInfo.InvariantCulture);
+        await ProblemResponses.WriteAsync(context, new ProblemDetails
         {
-            await _next(context);
-            return;
-        }
-
-        var retryAfterSeconds = Math.Max(
-            1,
-            _configuration.GetValue<int>(
-                "MaintenanceMode:RetryAfterSeconds",
-                3600));
-
-        var message = _configuration[
-            "MaintenanceMode:Message"]
-            ?? "The application is temporarily unavailable.";
-
-        var correlationId =
-            context.Items[CorrelationIdMiddleware.ItemKey]?.ToString()
-            ?? context.TraceIdentifier;
-
-        _logger.LogWarning(
-            "Maintenance mode rejected request {Method} {Path}. " +
-            "CorrelationId: {CorrelationId}",
-            context.Request.Method,
-            context.Request.Path,
-            correlationId);
-
-        context.Response.StatusCode =
-            StatusCodes.Status503ServiceUnavailable;
-
-        context.Response.Headers["Retry-After"] =
-            retryAfterSeconds.ToString(
-                System.Globalization.CultureInfo.InvariantCulture);
-
-        context.Response.ContentType = "application/problem+json";
-
-        var problem = new ProblemDetails
-        {
-            Type = "https://httpstatuses.com/503",
-            Title = "Service Unavailable",
             Status = StatusCodes.Status503ServiceUnavailable,
-            Detail = message
-        };
-
-        problem.Extensions["correlationId"] = correlationId;
-
-        await context.Response.WriteAsJsonAsync(problem);
+            Title = "Service unavailable",
+            Detail = current.Message,
+        }).ConfigureAwait(false);
     }
+
+    [LoggerMessage(Level = LogLevel.Warning, Message = "Maintenance mode rejected {Method} {Path}")]
+    private partial void LogRejected(string method, string path);
 }

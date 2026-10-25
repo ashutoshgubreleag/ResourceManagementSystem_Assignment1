@@ -1,287 +1,363 @@
-using Microsoft.AspNetCore.Authorization;
-using Microsoft.AspNetCore.Hosting;
-using Microsoft.AspNetCore.Mvc.Testing;
-using Microsoft.Extensions.Configuration;
-using Microsoft.Extensions.DependencyInjection;
-using System.Security.Claims;
 using ResourceManagementSystem.Database.Models;
+using ResourceManagementSystem.Models.Exceptions;
+using ResourceManagementSystem.Models.ValueObjects;
 using ResourceManagementSystem.Repositories;
+using ResourceManagementSystem.Services.Events;
 using ResourceManagementSystem.Services.Inventory;
 using ResourceManagementSystem.Services.MoneyOrders;
 using ResourceManagementSystem.Services.Shipping;
-using System.Net;
-using System.Net.Http.Headers;
-using System.Text.RegularExpressions;
-using Xunit;
+using ResourceManagementSystem.Services.Transactions;
+using ResourceManagementSystem.Tests.Support;
 
 namespace ResourceManagementSystem.Tests;
 
-public class ApexPostBusinessRulesTests
+/// <summary>
+/// The four rule areas the brief requires unit tests for: stock, money order identity check,
+/// parcel weight limits and pricing. These run against the real services and JSON repositories.
+/// </summary>
+public sealed class StockRuleTests
 {
     [Fact]
-    public void ReserveStock_RejectsInsufficientQuantity()
+    public async Task Sale_FailsAndChangesNothing_WhenStockIsInsufficient()
     {
-        var repo = new InMemoryRepository<BranchStockEntity>(new[]
-        {
-            new BranchStockEntity { Id = 1, BranchCode = "BR-001", Sku = "PKG-001", QuantityOnHand = 2, ReorderThreshold = 5 }
-        });
+        await using var harness = await ServiceHarness.CreateAsync();
+        var inventory = harness.Scoped<IInventoryService>();
+        var branch = new BranchCode("BR-001");
+        var sku = new Sku("PKG-001");
+        var other = new Sku("PKG-002");
+        var onHand = await inventory.GetAvailableQuantityAsync(branch, sku, CancellationToken.None);
+        var otherBefore = await inventory.GetAvailableQuantityAsync(branch, other, CancellationToken.None);
 
-        var service = new InventoryService(repo);
+        var ex = await Assert.ThrowsAsync<BusinessRuleViolationException>(() =>
+            inventory.DeductAsync(branch, [new StockQuantity(other, 1), new StockQuantity(sku, onHand + 1)], CancellationToken.None));
 
-        var ex = Assert.Throws<InvalidOperationException>(() => service.ReserveStock("BR-001", "PKG-001", 3));
-        Assert.Contains("Insufficient stock", ex.Message);
+        Assert.Equal("STOCK_INSUFFICIENT", ex.RuleCode);
+        Assert.Equal(onHand, await inventory.GetAvailableQuantityAsync(branch, sku, CancellationToken.None));
+        Assert.Equal(otherBefore, await inventory.GetAvailableQuantityAsync(branch, other, CancellationToken.None)); // all or nothing
     }
 
     [Fact]
-    public void CreateMoneyOrder_RequiresVerificationForHighValueTransaction()
+    public async Task Sale_CanTakeStockToExactlyZero()
     {
-        var moneyRepo = new InMemoryRepository<MoneyOrderEntity>();
-        var verificationRepo = new InMemoryRepository<IdentityVerificationEntity>();
-        var service = new MoneyOrderService(moneyRepo, verificationRepo);
+        await using var harness = await ServiceHarness.CreateAsync();
+        var inventory = harness.Scoped<IInventoryService>();
+        var branch = new BranchCode("BR-002");
+        var sku = new Sku("OFF-001");
+        var onHand = await inventory.GetAvailableQuantityAsync(branch, sku, CancellationToken.None);
 
-        var order = new MoneyOrderEntity
-        {
-            BranchCode = "BR-001",
-            Amount = 2000m,
-            Sender = "Alice",
-            Recipient = "Bob",
-            Fee = 25m
-        };
+        await inventory.DeductAsync(branch, [new StockQuantity(sku, onHand)], CancellationToken.None);
 
-        var ex = Assert.Throws<InvalidOperationException>(() => service.CreateMoneyOrder(order, verificationThreshold: 1000m));
-        Assert.Contains("Identity verification is required", ex.Message);
+        Assert.Equal(0, await inventory.GetAvailableQuantityAsync(branch, sku, CancellationToken.None));
     }
 
     [Fact]
-    public void ParcelWeight_RejectsOverLimitForServiceLevel()
+    public void StockEntity_RefusesNegativeQuantity()
     {
-        var repo = new InMemoryRepository<ShippingOrderEntity>();
-        var service = new ShippingService(repo, new DefaultShippingPricingStrategy());
+        var row = new BranchStockEntity { BranchCode = new BranchCode("BR-001"), Sku = new Sku("PKG-001"), QuantityOnHand = 1 };
 
-        var isValid = service.IsValidForServiceLevel(ShippingType.Parcel, ShippingServiceLevel.Express, 4m);
+        var ex = Assert.Throws<BusinessRuleViolationException>(() => row.QuantityOnHand = -1);
 
-        Assert.False(isValid);
+        Assert.Equal("STOCK_NEGATIVE", ex.RuleCode);
     }
 
     [Fact]
-    public void CalculatePrice_ReturnsExpectedRateForLocalStandardParcel()
+    public async Task ConcurrentSales_OfTheLastItems_NeverOversell()
     {
-        var repo = new InMemoryRepository<ShippingOrderEntity>();
-        var service = new ShippingService(repo, new DefaultShippingPricingStrategy());
+        await using var harness = await ServiceHarness.CreateAsync();
+        var branch = new BranchCode("BR-003");
+        var sku = new Sku("STN-001");
+        var onHand = await harness.Scoped<IInventoryService>().GetAvailableQuantityAsync(branch, sku, CancellationToken.None);
 
-        var result = service.CalculatePrice(ShippingType.Parcel, DestinationZone.Local, ShippingServiceLevel.Standard, 2m);
-
-        Assert.Equal(4.00m, result);
-    }
-
-    private sealed class InMemoryRepository<TEntity> : IBaseEntityRepository<TEntity> where TEntity : class
-    {
-        private readonly List<TEntity> _items;
-
-        public InMemoryRepository(IEnumerable<TEntity>? items = null)
+        // Twice as many single-unit sales as there is stock, all at once.
+        var attempts = Enumerable.Range(0, onHand * 2).Select(async _ =>
         {
-            _items = items?.ToList() ?? new List<TEntity>();
-        }
-
-        public TEntity Add(TEntity entity)
-        {
-            var idProperty = typeof(TEntity).GetProperty("Id");
-            if (idProperty is not null && idProperty.PropertyType == typeof(int))
+            try
             {
-                var next = _items.Select(x => (int)(idProperty.GetValue(x) ?? 0)).DefaultIfEmpty(0).Max() + 1;
-                idProperty.SetValue(entity, next);
+                await harness.Scoped<IInventoryService>().DeductAsync(branch, [new StockQuantity(sku, 1)], CancellationToken.None);
+                return true;
             }
+            catch (BusinessRuleViolationException)
+            {
+                return false;
+            }
+        });
+        var results = await Task.WhenAll(attempts);
 
-            _items.Add(entity);
-            return entity;
-        }
+        Assert.Equal(onHand, results.Count(ok => ok));
+        Assert.Equal(0, await harness.Scoped<IInventoryService>().GetAvailableQuantityAsync(branch, sku, CancellationToken.None));
+    }
 
-        public bool Update(TEntity entity)
-        {
-            var idProperty = typeof(TEntity).GetProperty("Id");
-            if (idProperty is null) return false;
-            var id = idProperty.GetValue(entity);
-            var index = _items.FindIndex(x => Equals(idProperty.GetValue(x), id));
-            if (index < 0) return false;
-            _items[index] = entity;
-            return true;
-        }
+    [Fact]
+    public async Task Sale_RaisesStockLowEvent_WhenCrossingReorderLevel()
+    {
+        await using var harness = await ServiceHarness.CreateAsync();
+        var events = harness.Get<IApexPostEvents>();
+        var raised = new List<StockLowEventArgs>();
+        events.StockLow += (_, e) => raised.Add(e);
 
-        public TEntity? GetById(object id)
-        {
-            var idProperty = typeof(TEntity).GetProperty("Id");
-            if (idProperty is null) return null;
-            var target = idProperty.PropertyType == typeof(int) ? Convert.ToInt32(id) : id;
-            return _items.FirstOrDefault(x => Equals(idProperty.GetValue(x), target));
-        }
+        var inventory = harness.Scoped<IInventoryService>();
+        var stock = await inventory.GetStockForBranchAsync(new BranchCode("BR-004"), CancellationToken.None);
+        var healthy = stock.First(s => s.QuantityOnHand > Math.Max(s.ReorderThreshold, 5) + 1);
+        var take = healthy.QuantityOnHand - healthy.ReorderThreshold;
 
-        public IEnumerable<TEntity> GetAll() => _items;
+        await inventory.DeductAsync(healthy.BranchCode, [new StockQuantity(healthy.Sku, take)], CancellationToken.None);
 
-        public bool Delete(object id)
-        {
-            var item = GetById(id);
-            if (item is null) return false;
-            return _items.Remove(item);
-        }
+        var e = Assert.Single(raised);
+        Assert.Equal(healthy.Sku, e.Sku);
     }
 }
 
-public class ApexPostIntegrationTests
+public sealed class MoneyOrderIdentityRuleTests
 {
     [Fact]
-    public async Task SecurityHeaders_ArePresent()
+    public async Task Payment_IsBlocked_ForHighValueMoneyOrderWithoutVerification()
     {
-        var factory = new ApexPostWebApplicationFactory();
-        using var client = factory.CreateClient(new WebApplicationFactoryClientOptions { AllowAutoRedirect = false });
-        var response = await client.GetAsync("/Account/Login");
+        await using var harness = await ServiceHarness.CreateAsync();
+        var service = harness.Scoped<ITransactionService>();
+        var clerk = ServiceHarness.Clerk();
+        var tx = await service.OpenAsync(clerk, 1, CancellationToken.None);
+        await service.AddMoneyOrderAsync(tx.Id, new MoneyOrderCommand { Amount = 1500m, Sender = "Ann", Recipient = "Ben" }, clerk, CancellationToken.None);
 
-        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
-        Assert.True(response.Headers.Contains("Content-Security-Policy"));
-        Assert.True(response.Headers.Contains("X-Content-Type-Options"));
-        Assert.True(response.Headers.Contains("X-Frame-Options"));
+        var ex = await Assert.ThrowsAsync<BusinessRuleViolationException>(() => service.PayAsync(tx.Id, PaymentMethod.Cash, clerk, CancellationToken.None));
+
+        Assert.Equal("MONEY_ORDER_ID_REQUIRED", ex.RuleCode);
     }
 
     [Fact]
-    public async Task IntegrationEndpoint_Returns401WithoutApiKey()
+    public async Task Payment_IsBlocked_WhenTheVerificationFailed()
     {
-        var factory = new ApexPostWebApplicationFactory { AllowedIps = new[] { "127.0.0.1", "::1" } };
-        using var client = factory.CreateClient(new WebApplicationFactoryClientOptions { AllowAutoRedirect = false });
-        client.DefaultRequestHeaders.Add("X-Forwarded-For", "127.0.0.1");
+        await using var harness = await ServiceHarness.CreateAsync();
+        var service = harness.Scoped<ITransactionService>();
+        var clerk = ServiceHarness.Clerk();
+        var tx = await service.OpenAsync(clerk, 1, CancellationToken.None);
+        await service.AddMoneyOrderAsync(tx.Id, new MoneyOrderCommand { Amount = 5000m, Sender = "Ann", Recipient = "Ben" }, clerk, CancellationToken.None);
+        await service.AddIdentityVerificationAsync(tx.Id, Verification(VerificationResult.Failed), clerk, CancellationToken.None);
 
-        var response = await client.GetAsync("/integration/parcel-status");
-
-        Assert.Equal(HttpStatusCode.Unauthorized, response.StatusCode);
+        await Assert.ThrowsAsync<BusinessRuleViolationException>(() => service.PayAsync(tx.Id, PaymentMethod.Card, clerk, CancellationToken.None));
     }
 
     [Fact]
-    public async Task BlockedIp_Returns403()
+    public async Task Payment_Succeeds_WithPassedVerificationInTheSameTransaction_AndLinksIt()
     {
-        var factory = new ApexPostWebApplicationFactory { AllowedIps = new[] { "10.0.0.1", "10.0.0.2" } };
-        using var client = factory.CreateClient(new WebApplicationFactoryClientOptions { AllowAutoRedirect = false });
-        client.DefaultRequestHeaders.Add("X-Forwarded-For", "127.0.0.1");
+        await using var harness = await ServiceHarness.CreateAsync();
+        var service = harness.Scoped<ITransactionService>();
+        var clerk = ServiceHarness.Clerk();
+        var tx = await service.OpenAsync(clerk, 1, CancellationToken.None);
+        var order = await service.AddMoneyOrderAsync(tx.Id, new MoneyOrderCommand { Amount = 1500m, Sender = "Ann", Recipient = "Ben" }, clerk, CancellationToken.None);
+        var check = await service.AddIdentityVerificationAsync(tx.Id, Verification(VerificationResult.Passed), clerk, CancellationToken.None);
 
-        var response = await client.GetAsync("/integration/parcel-status");
+        var paid = await service.PayAsync(tx.Id, PaymentMethod.Card, clerk, CancellationToken.None);
 
-        Assert.Equal(HttpStatusCode.Forbidden, response.StatusCode);
+        Assert.Equal(TransactionStatus.Paid, paid.Status);
+        var issued = await harness.Get<IBaseEntityRepository<MoneyOrderEntity>>().GetByIdAsync(order.Id);
+        Assert.Equal(MoneyOrderStatus.Issued, issued!.Status);
+        Assert.Equal(check.Id, issued.IdentityVerificationId);
     }
 
     [Fact]
-    public async Task UnauthenticatedAccess_RedirectsToLogin()
+    public async Task VerificationInAnotherTransaction_DoesNotCount()
     {
-        var factory = new ApexPostWebApplicationFactory();
-        using var client = factory.CreateClient(new WebApplicationFactoryClientOptions { AllowAutoRedirect = false });
-        var response = await client.GetAsync("/Branch");
+        await using var harness = await ServiceHarness.CreateAsync();
+        var service = harness.Scoped<ITransactionService>();
+        var clerk = ServiceHarness.Clerk();
+        var first = await service.OpenAsync(clerk, 1, CancellationToken.None);
+        await service.AddIdentityVerificationAsync(first.Id, Verification(VerificationResult.Passed), clerk, CancellationToken.None);
+        var second = await service.OpenAsync(clerk, 1, CancellationToken.None);
+        await service.AddMoneyOrderAsync(second.Id, new MoneyOrderCommand { Amount = 2000m, Sender = "Ann", Recipient = "Ben" }, clerk, CancellationToken.None);
 
-        Assert.Equal(HttpStatusCode.Redirect, response.StatusCode);
-        Assert.Contains("/Account/Login", response.Headers.Location?.OriginalString ?? string.Empty);
+        await Assert.ThrowsAsync<BusinessRuleViolationException>(() => service.PayAsync(second.Id, PaymentMethod.Card, clerk, CancellationToken.None));
+    }
+
+    [Theory]
+    [InlineData(999.99, false)]
+    [InlineData(1000.00, false)] // "above" the threshold, so exactly 1000 does not need a check
+    [InlineData(1000.01, true)]
+    public async Task Threshold_IsConfigurableAndExclusive(decimal amount, bool requiresCheck)
+    {
+        await using var harness = await ServiceHarness.CreateAsync();
+        var rules = harness.Get<ResourceManagementSystem.Services.Common.BusinessRules>();
+
+        Assert.Equal(requiresCheck, rules.RequiresIdentityVerification(new Money(amount)));
     }
 
     [Fact]
-    public async Task CorrelationIdHeader_IsReturned()
+    public async Task Threshold_ComesFromConfiguration()
     {
-        var factory = new ApexPostWebApplicationFactory();
-        using var client = factory.CreateClient(new WebApplicationFactoryClientOptions { AllowAutoRedirect = false });
-        var response = await client.GetAsync("/health");
+        await using var harness = await ServiceHarness.CreateAsync(new Dictionary<string, string?> { ["BusinessRules:MoneyOrderIdentityThreshold"] = "200" });
+        var rules = harness.Get<ResourceManagementSystem.Services.Common.BusinessRules>();
 
-        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
-        Assert.True(response.Headers.Contains("X-Correlation-Id"));
+        Assert.True(rules.RequiresIdentityVerification(new Money(250m)));
     }
 
     [Fact]
-    public async Task Login_OnceRateLimitExceeded_Returns429()
+    public async Task DocumentNumber_IsStoredMasked_NeverInFull()
     {
-        var factory = new ApexPostWebApplicationFactory();
-        using var client = factory.CreateClient(new WebApplicationFactoryClientOptions
+        await using var harness = await ServiceHarness.CreateAsync();
+        var service = harness.Scoped<ITransactionService>();
+        var clerk = ServiceHarness.Clerk();
+        var tx = await service.OpenAsync(clerk, 1, CancellationToken.None);
+
+        var check = await service.AddIdentityVerificationAsync(tx.Id, Verification(VerificationResult.Passed, "PA 9876 5432"), clerk, CancellationToken.None);
+
+        Assert.Equal("****5432", check.MaskedDocumentNumber.Value);
+        var files = Directory.GetFiles(harness.DataDirectory).Select(File.ReadAllText);
+        Assert.DoesNotContain(files, content => content.Contains("98765432", StringComparison.Ordinal) || content.Contains("PA 9876", StringComparison.Ordinal));
+    }
+
+    private static IdentityVerificationCommand Verification(VerificationResult result, string number = "N1234567") => new()
+    {
+        CustomerName = "Ann Customer",
+        DocumentType = DocumentType.Passport,
+        DocumentNumber = number,
+        Result = result,
+    };
+}
+
+public sealed class ParcelWeightLimitTests
+{
+    [Theory]
+    [InlineData(ShippingServiceLevel.Standard, 22.0, true)]
+    [InlineData(ShippingServiceLevel.Standard, 22.01, false)]
+    [InlineData(ShippingServiceLevel.Express, 20.0, true)]
+    [InlineData(ShippingServiceLevel.Express, 20.5, false)]
+    [InlineData(ShippingServiceLevel.Registered, 5.0, true)]
+    [InlineData(ShippingServiceLevel.Registered, 5.1, false)]
+    public void Parcel_IsRejected_AboveTheServiceLevelMaximum(ShippingServiceLevel level, double kg, bool accepted)
+    {
+        var act = () => ServiceLevelRules.EnsureAcceptable(ShippingType.Parcel, level, new Weight((decimal)kg), new Dimensions(30, 20, 10));
+
+        if (accepted)
         {
-            AllowAutoRedirect = false,
-            BaseAddress = new Uri("https://localhost")
-        });
-
-        for (var i = 0; i < 5; i++)
-        {
-            var getResponse = await client.GetAsync("/Account/Login");
-            var html = await getResponse.Content.ReadAsStringAsync();
-            var tokenMatch = Regex.Match(html, @"name=""__RequestVerificationToken"" type=""hidden"" value=""([^""]+)""");
-
-            var token = tokenMatch.Groups[1].Value;
-            var form = new FormUrlEncodedContent(new[]
-            {
-                new KeyValuePair<string, string>("Email", "admin@apexpost.local"),
-                new KeyValuePair<string, string>("Password", "ApexPost123!"),
-                new KeyValuePair<string, string>("__RequestVerificationToken", token)
-            });
-
-            var response = await client.PostAsync("/Account/Login", form);
-            if (i < 4)
-            {
-                Assert.True(response.StatusCode == HttpStatusCode.Redirect || response.StatusCode == HttpStatusCode.OK,
-                    $"Unexpected status code on attempt {i + 1}: {response.StatusCode}");
-            }
+            act();
         }
-
-        var lastLoginPage = await client.GetAsync("/Account/Login");
-        var lastHtml = await lastLoginPage.Content.ReadAsStringAsync();
-        var lastToken = Regex.Match(lastHtml, @"name=""__RequestVerificationToken"" type=""hidden"" value=""([^""]+)""");
-        var formContent = new FormUrlEncodedContent(new[]
+        else
         {
-            new KeyValuePair<string, string>("Email", "admin@apexpost.local"),
-            new KeyValuePair<string, string>("Password", "ApexPost123!"),
-            new KeyValuePair<string, string>("__RequestVerificationToken", lastToken.Groups[1].Value)
-        });
-
-        var rateLimited = await client.PostAsync("/Account/Login", formContent);
-        Assert.Equal(HttpStatusCode.TooManyRequests, rateLimited.StatusCode);
+            Assert.Equal("PARCEL_OVERWEIGHT", Assert.Throws<BusinessRuleViolationException>(act).RuleCode);
+        }
     }
 
     [Fact]
-    public async Task Clerk_Gets403_OnVoidAction()
+    public void Letter_OverHalfAKilo_IsRejected()
     {
-        var services = new ServiceCollection();
-        services.AddLogging();
-        services.AddAuthorization(options =>
-        {
-            options.AddPolicy("BranchManagerOnly", policy => policy.RequireRole("BranchManager"));
-        });
+        var ex = Assert.Throws<BusinessRuleViolationException>(() =>
+            ServiceLevelRules.EnsureAcceptable(ShippingType.Letter, ShippingServiceLevel.Standard, new Weight(0.6m), new Dimensions(24, 16, 1)));
+        Assert.Equal("PARCEL_OVERWEIGHT", ex.RuleCode);
+    }
 
-        using var provider = services.BuildServiceProvider();
-        var authorizationService = provider.GetRequiredService<IAuthorizationService>();
-        var principal = new ClaimsPrincipal(new ClaimsIdentity(
-            new[] { new Claim(ClaimTypes.Role, "Clerk") },
-            authenticationType: "Test"));
+    [Fact]
+    public void ThickLetter_MustGoAsParcel()
+    {
+        var ex = Assert.Throws<BusinessRuleViolationException>(() =>
+            ServiceLevelRules.EnsureAcceptable(ShippingType.Letter, ShippingServiceLevel.Standard, new Weight(0.2m), new Dimensions(24, 16, 3)));
+        Assert.Equal("LETTER_OVERSIZE", ex.RuleCode);
+    }
 
-        var result = await authorizationService.AuthorizeAsync(principal, "BranchManagerOnly");
+    [Fact]
+    public async Task OverweightParcel_CannotBeAddedToABasket()
+    {
+        await using var harness = await ServiceHarness.CreateAsync();
+        var service = harness.Scoped<ITransactionService>();
+        var clerk = ServiceHarness.Clerk();
+        var tx = await service.OpenAsync(clerk, 1, CancellationToken.None);
+        var command = new AddShipmentCommand(
+            new ShippingQuoteCommand { ShippingType = ShippingType.Parcel, ServiceLevel = ShippingServiceLevel.Registered, ZoneCode = "Z01", WeightKg = 6m, LengthCm = 30, WidthCm = 20, HeightCm = 10 },
+            new RecipientCommand { RecipientName = "A", Line1 = "1 St", City = "Sydney", State = "NSW", Postcode = "2000" });
 
-        Assert.False(result.Succeeded);
-        Assert.NotNull(result.Failure);
+        await Assert.ThrowsAsync<BusinessRuleViolationException>(() => service.AddShipmentAsync(tx.Id, command, clerk, CancellationToken.None));
     }
 }
 
-public class ApexPostWebApplicationFactory : WebApplicationFactory<Program>
+public sealed class PricingTests
 {
-    public string[] AllowedIps { get; set; } = new[] { "10.0.0.1" };
+    private static readonly ShippingZoneEntity Metro = new() { ZoneCode = "Z01", Name = "Metro", LetterBaseRate = new Money(1.20m), ParcelBaseRate = new Money(8.95m), PerKgRate = new Money(1.10m) };
+    private static readonly ShippingZoneEntity Remote = new() { ZoneCode = "Z05", Name = "Remote", IsRemote = true, LetterBaseRate = new Money(1.40m), ParcelBaseRate = new Money(16.95m), PerKgRate = new Money(3.20m) };
+    private static readonly ShippingZoneEntity Europe = new() { ZoneCode = "Z09", Name = "Europe", IsInternational = true, LetterBaseRate = new Money(4.20m), ParcelBaseRate = new Money(34.95m), PerKgRate = new Money(9.40m) };
 
-    protected override void ConfigureWebHost(IWebHostBuilder builder)
+    private readonly DefaultShippingPricingStrategy _strategy = new();
+
+    [Fact]
+    public void StandardDomesticParcel_BaseFuelAndTax()
     {
-        builder.UseEnvironment("Development");
+        // 2 kg, small box: base 8.95 + 1.10 x ceil(1.5) = 11.15; fuel 8% = 0.89; net 12.04; GST 10% = 1.20.
+        var quote = _strategy.Price(Context(Metro, ShippingType.Parcel, ShippingServiceLevel.Standard, 2m, new Dimensions(20, 15, 10), 0.08m));
 
-        builder.ConfigureAppConfiguration((_, configBuilder) =>
-        {
-            var settings = new Dictionary<string, string?>
-            {
-                ["AllowedHosts"] = "*",
-                ["IpRestriction:Enabled"] = "true",
-                ["IpRestriction:ProtectedPathPrefixes:0"] = "/integration",
-                ["MaintenanceMode:Enabled"] = "false",
-                ["Authentication:DemoPassword"] = "ApexPost123!",
-                ["Integration:ApiKey"] = "ApexPost-Partner-Key-2026"
-            };
-
-            for (var i = 0; i < AllowedIps.Length; i++)
-            {
-                settings[$"IpRestriction:AllowedIPs:{i}"] = AllowedIps[i];
-            }
-
-            configBuilder.AddInMemoryCollection(settings);
-        });
+        Assert.Equal(new Money(11.15m), quote.BasePostage);
+        Assert.Equal(new Money(12.04m), quote.Net);
+        Assert.Equal(TaxCategory.Standard, quote.TaxCategory);
+        Assert.Equal(new Money(1.20m), quote.Tax);
+        Assert.Equal(new Money(13.24m), quote.Total);
     }
+
+    [Fact]
+    public void Express_Adds60PercentOfBase()
+    {
+        var standard = _strategy.Price(Context(Metro, ShippingType.Parcel, ShippingServiceLevel.Standard, 2m, new Dimensions(20, 15, 10), 0m));
+        var express = _strategy.Price(Context(Metro, ShippingType.Parcel, ShippingServiceLevel.Express, 2m, new Dimensions(20, 15, 10), 0m));
+
+        Assert.Equal(new Money(6.69m), express.ServiceLoading);
+        Assert.Equal(standard.Net + new Money(6.69m), express.Net);
+    }
+
+    [Fact]
+    public void BulkyParcel_IsChargedOnVolumetricWeight()
+    {
+        // 60x40x30 cm = 72,000 cm³ / 5,000 = 14.4 kg volumetric, far above the 2 kg actual weight.
+        var quote = _strategy.Price(Context(Metro, ShippingType.Parcel, ShippingServiceLevel.Standard, 2m, new Dimensions(60, 40, 30), 0m));
+
+        Assert.Equal(new Weight(14.4m), quote.ChargeableWeight);
+        Assert.Equal(new Money(8.95m + 1.10m * 14), quote.BasePostage);
+    }
+
+    [Fact]
+    public void International_IsTaxExempt_AndRemoteAddsSurcharge()
+    {
+        var europe = _strategy.Price(Context(Europe, ShippingType.Parcel, ShippingServiceLevel.Registered, 1m, new Dimensions(20, 15, 10), 0.12m));
+        var remote = _strategy.Price(Context(Remote, ShippingType.Letter, ShippingServiceLevel.Standard, 0.1m, new Dimensions(22, 11, 0.5m), 0m));
+
+        Assert.Equal(TaxCategory.Exempt, europe.TaxCategory);
+        Assert.Equal(Money.Zero, europe.Tax);
+        Assert.Equal(new Money(4.50m), europe.ServiceLoading);
+        Assert.Contains(remote.Surcharges, s => s.Name == "Remote area" && s.Amount == new Money(3.00m));
+    }
+
+    [Fact]
+    public void Surcharges_ArePluggableDelegates()
+    {
+        ShippingSurchargeRule christmas = _ => new SurchargeLine("Peak season", new Money(1.00m));
+        var strategy = new DefaultShippingPricingStrategy([christmas]);
+
+        var quote = strategy.Price(Context(Metro, ShippingType.Letter, ShippingServiceLevel.Standard, 0.1m, new Dimensions(22, 11, 0.5m), 0.08m));
+
+        Assert.Equal(new Money(2.20m), quote.Net); // 1.20 base + 1.00 peak, no fuel rule registered
+    }
+
+    [Fact]
+    public async Task Basket_TaxAndTotals_MixRetailAndServices()
+    {
+        await using var harness = await ServiceHarness.CreateAsync();
+        var service = harness.Scoped<ITransactionService>();
+        var clerk = ServiceHarness.Clerk();
+        var inventory = harness.Scoped<IInventoryService>();
+        foreach (var sku in new[] { "STN-004", "PKG-001" })
+        {
+            await inventory.AdjustAsync(new StockAdjustmentCommand { BranchCode = "BR-001", Sku = sku, QuantityChange = 10, Reason = "Test delivery" }, ServiceHarness.Manager(), CancellationToken.None);
+        }
+
+        var tx = await service.OpenAsync(clerk, 1, CancellationToken.None);
+        await service.AddRetailItemAsync(tx.Id, new AddRetailItemCommand { Sku = "STN-004", Quantity = 2 }, clerk, CancellationToken.None); // 4.95 Exempt
+        await service.AddRetailItemAsync(tx.Id, new AddRetailItemCommand { Sku = "PKG-001", Quantity = 1 }, clerk, CancellationToken.None); // 2.95 Standard
+        var order = await service.AddMoneyOrderAsync(tx.Id, new MoneyOrderCommand { Amount = 200m, Sender = "A", Recipient = "B" }, clerk, CancellationToken.None);
+        var details = await service.GetDetailsAsync(tx.Id, clerk, CancellationToken.None);
+        var t = details.Transaction;
+
+        Assert.Equal(new Money(5.00m), order.Fee);                    // minimum fee
+        Assert.Equal(new Money(12.85m), t.RetailNet);                 // 9.90 + 2.95
+        Assert.Equal(new Money(5.00m), t.ServicesNet);
+        Assert.Equal(new Money(0.30m), t.TaxAmount);                  // only the 2.95 line is taxed
+        Assert.Equal(new Money(200m), t.PassThroughAmount);
+        Assert.Equal(new Money(218.15m), t.TotalAmount);
+    }
+
+    private static ShippingPricingContext Context(ShippingZoneEntity zone, ShippingType type, ShippingServiceLevel level, decimal kg, Dimensions dims, decimal fuel) =>
+        new(type, level, zone, new Weight(kg), dims, fuel);
 }

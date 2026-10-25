@@ -1,96 +1,55 @@
-﻿
+using System.Diagnostics;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Logging;
-using System.Diagnostics;
+using ResourceManagementSystem.Models.Diagnostics;
 
-namespace ResourceManagementSystem.Utilities;
+namespace ResourceManagementSystem.Utilities.Middleware;
 
-public sealed class CorrelationIdMiddleware
+/// <summary>
+/// Reuses a well-formed incoming <c>X-Correlation-Id</c> (so a courier partner can trace a call
+/// across both systems) or generates one, echoes it on the response, and opens a logging scope so
+/// every log entry written while handling the request carries it.
+/// </summary>
+public sealed class CorrelationIdMiddleware(RequestDelegate next, ILogger<CorrelationIdMiddleware> logger)
 {
     public const string HeaderName = "X-Correlation-Id";
     public const string ItemKey = "CorrelationId";
 
-    private readonly RequestDelegate _next;
-    private readonly ILogger<CorrelationIdMiddleware> _logger;
-
-    public CorrelationIdMiddleware(
-        RequestDelegate next,
-        ILogger<CorrelationIdMiddleware> logger)
-    {
-        _next = next;
-        _logger = logger;
-    }
-
     public async Task InvokeAsync(HttpContext context)
     {
-        var correlationId = GetOrCreateCorrelationId(context);
+        ArgumentNullException.ThrowIfNull(context);
+        var correlationId = ReadOrCreate(context.Request);
 
         context.Items[ItemKey] = correlationId;
+        context.TraceIdentifier = correlationId;
+        Activity.Current?.SetTag("correlation.id", correlationId);
 
+        // OnStarting: headers can only be added before the response starts; this also covers
+        // responses written by later middleware (401/403/429/503) and the exception handler.
         context.Response.OnStarting(() =>
         {
             context.Response.Headers[HeaderName] = correlationId;
             return Task.CompletedTask;
         });
 
-        using (_logger.BeginScope(
-            new Dictionary<string, object>
-            {
-                ["CorrelationId"] = correlationId
-            }))
+        using (logger.BeginScope("CorrelationId:{CorrelationId}", correlationId))
+        using (CorrelationContext.Begin(correlationId))
         {
-            using (LogContext.BeginScope(correlationId))
-            {
-                _logger.LogInformation(
-                    "Handling HTTP {Method} {Path}",
-                    context.Request.Method,
-                    context.Request.Path);
-
-                await _next(context);
-            }
+            await next(context).ConfigureAwait(false);
         }
     }
 
-    private static string GetOrCreateCorrelationId(
-        HttpContext context)
+    public static string Get(HttpContext context) =>
+        context?.Items[ItemKey] as string ?? context?.TraceIdentifier ?? string.Empty;
+
+    private static string ReadOrCreate(HttpRequest request)
     {
-        var incomingId = context.Request.Headers[HeaderName]
-            .FirstOrDefault();
+        var incoming = request.Headers[HeaderName].ToString();
 
-        // Accept only a single, bounded, safe identifier.
-        if (!string.IsNullOrWhiteSpace(incomingId)
-            && incomingId.Length <= 128
-            && incomingId.All(c =>
-                char.IsAsciiLetterOrDigit(c)
-                || c is '-' or '_' or '.'))
-        {
-            return incomingId;
-        }
-
-        return ActivityTraceId.CreateRandom().ToString();
-    }
-}
-
-// Provides a small helper to avoid needing another logging package.
-internal static class LogContext
-{
-    public static IDisposable? BeginScope(string correlationId)
-        => CorrelationScope.Begin(correlationId);
-}
-
-internal static class CorrelationScope
-{
-    private static readonly AsyncLocal<string?> CurrentId = new();
-
-    public static IDisposable Begin(string correlationId)
-    {
-        var previous = CurrentId.Value;
-        CurrentId.Value = correlationId;
-        return new Scope(() => CurrentId.Value = previous);
-    }
-
-    private sealed class Scope(Action dispose) : IDisposable
-    {
-        public void Dispose() => dispose();
+        // Only accept a single, bounded, safe token: it ends up in logs and response headers,
+        // so anything else (log injection, header splitting, huge values) is replaced.
+        return incoming is { Length: > 0 and <= 64 } && incoming.All(c => char.IsAsciiLetterOrDigit(c) || c is '-' or '_' or '.')
+            ? incoming
+            : Guid.NewGuid().ToString("N");
     }
 }

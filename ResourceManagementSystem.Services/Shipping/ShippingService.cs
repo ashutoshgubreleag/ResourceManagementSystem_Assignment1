@@ -1,78 +1,100 @@
+using System.Globalization;
+using System.Security.Cryptography;
 using ResourceManagementSystem.Database.Models;
+using ResourceManagementSystem.Models.Exceptions;
+using ResourceManagementSystem.Models.Validation;
+using ResourceManagementSystem.Models.ValueObjects;
 using ResourceManagementSystem.Repositories;
+using ResourceManagementSystem.Repositories.Specifications;
+using ResourceManagementSystem.Services.Caching;
+using ResourceManagementSystem.Services.Common;
+using ResourceManagementSystem.Services.Courier;
 
 namespace ResourceManagementSystem.Services.Shipping;
 
-public class ShippingService : IShippingService
+public sealed class ShippingService(
+    IBaseEntityRepository<ShippingOrderEntity> shipments,
+    IReferenceDataCache referenceData,
+    ICourierRateService courierRates,
+    IShippingPricingStrategy pricing,
+    TimeProvider clock) : IShippingService
 {
-    private readonly IBaseEntityRepository<ShippingOrderEntity> _shippingRepository;
-    private readonly IShippingPricingStrategy _pricingStrategy;
-    private readonly Dictionary<ShippingServiceLevel, decimal> _maxWeightByService = new()
+    public async Task<IReadOnlyList<ShippingZoneEntity>> GetZonesAsync(CancellationToken cancellationToken)
     {
-        [ShippingServiceLevel.Standard] = 5m,
-        [ShippingServiceLevel.Express] = 3m,
-        [ShippingServiceLevel.Registered] = 1m
-    };
-
-    public ShippingService(
-        IBaseEntityRepository<ShippingOrderEntity> shippingRepository,
-        IShippingPricingStrategy pricingStrategy)
-    {
-        _shippingRepository = shippingRepository;
-        _pricingStrategy = pricingStrategy ?? throw new ArgumentNullException(nameof(pricingStrategy));
+        var zones = await referenceData.GetZonesAsync(cancellationToken).ConfigureAwait(false);
+        return zones.Values.OrderBy(z => z.ZoneCode, StringComparer.Ordinal).ToList();
     }
 
-    public decimal CalculatePrice(ShippingType shippingType, DestinationZone destinationZone, ShippingServiceLevel serviceLevel, decimal weightKg, decimal lengthCm = 0m, decimal widthCm = 0m, decimal heightCm = 0m)
+    public async Task<ShippingQuote> QuoteAsync(ShippingQuoteCommand command, CancellationToken cancellationToken)
     {
-        var order = new ShippingOrderEntity
+        ArgumentNullException.ThrowIfNull(command);
+        ReflectionValidator.EnsureValid(command);
+
+        var zones = await referenceData.GetZonesAsync(cancellationToken).ConfigureAwait(false);
+        if (!zones.TryGetValue(command.ZoneCode, out var zone))
         {
-            ShippingType = shippingType,
-            DestinationZone = destinationZone,
-            ServiceLevel = serviceLevel,
-            WeightKg = weightKg,
-            LengthCm = lengthCm,
-            WidthCm = widthCm,
-            HeightCm = heightCm
+            throw new CommandValidationException(nameof(command.ZoneCode), $"Unknown destination zone '{command.ZoneCode}'.");
+        }
+
+        var weight = new Weight(command.WeightKg);
+        var dimensions = new Dimensions(command.LengthCm, command.WidthCm, command.HeightCm);
+        ServiceLevelRules.EnsureAcceptable(command.ShippingType, command.ServiceLevel, weight, dimensions);
+
+        // External call: bounded by the courier service's SemaphoreSlim and cancellable.
+        var fuelRate = await courierRates.GetFuelSurchargeRateAsync(zone, cancellationToken).ConfigureAwait(false);
+
+        return pricing.Price(new ShippingPricingContext(command.ShippingType, command.ServiceLevel, zone, weight, dimensions, fuelRate));
+    }
+
+    public async Task<ShippingOrderEntity> CreateShipmentAsync(int transactionId, BranchCode branch, ShippingQuote quote, Address recipient, CancellationToken cancellationToken)
+    {
+        ArgumentNullException.ThrowIfNull(quote);
+        var now = clock.GetUtcNow();
+        var shipment = new ShippingOrderEntity
+        {
+            TrackingNumber = string.Create(CultureInfo.InvariantCulture, $"APX{now:yyMMdd}{RandomNumberGenerator.GetInt32(100000, 999999)}"),
+            TransactionId = transactionId,
+            BranchCode = branch,
+            ShippingType = quote.Context.ShippingType,
+            ServiceLevel = quote.Context.ServiceLevel,
+            ZoneCode = quote.Context.Zone.ZoneCode,
+            Weight = quote.Context.ActualWeight,
+            Dimensions = quote.Context.Dimensions,
+            ChargeableWeight = quote.ChargeableWeight,
+            Recipient = recipient,
+            Price = quote.Net,
+            Status = ShipmentStatus.Quoted,
+            CreatedAt = now,
         };
 
-        return _pricingStrategy.CalculatePrice(order);
+        return await shipments.AddAsync(shipment, cancellationToken).ConfigureAwait(false);
     }
 
-    public bool IsValidForServiceLevel(ShippingType shippingType, ShippingServiceLevel serviceLevel, decimal weightKg, decimal lengthCm = 0m, decimal widthCm = 0m, decimal heightCm = 0m)
+    public async Task<ShippingOrderEntity> GetShipmentAsync(int shipmentId, StaffContext actor, CancellationToken cancellationToken)
     {
-        if (shippingType == ShippingType.Letter)
-        {
-            return weightKg <= 1m && lengthCm <= 35m && widthCm <= 25m && heightCm <= 5m;
-        }
+        ArgumentNullException.ThrowIfNull(actor);
+        var shipment = await shipments.GetByIdAsync(shipmentId, cancellationToken).ConfigureAwait(false)
+            ?? throw new EntityNotFoundException("Shipment", shipmentId);
 
-        return weightKg <= _maxWeightByService[serviceLevel];
+        return actor.CanReadBranch(shipment.BranchCode)
+            ? shipment
+            : throw new ForbiddenOperationException("You can only view shipments from your own branch.");
     }
 
-    public ShippingOrderEntity CreateShippingOrder(ShippingOrderEntity order)
+    public async Task SetStatusAsync(IReadOnlyCollection<int> shipmentIds, ShipmentStatus status, CancellationToken cancellationToken)
     {
-        if (order == null) throw new ArgumentNullException(nameof(order));
-        if (order.WeightKg <= 0m)
-            throw new InvalidOperationException("Weight must be greater than zero.");
-
-        if (order.LengthCm <= 0m || order.WidthCm <= 0m || order.HeightCm <= 0m)
+        ArgumentNullException.ThrowIfNull(shipmentIds);
+        if (shipmentIds.Count == 0)
         {
-            order.LengthCm = 10m;
-            order.WidthCm = 10m;
-            order.HeightCm = 10m;
+            return;
         }
 
-        if (!IsValidForServiceLevel(order.ShippingType, order.ServiceLevel, order.WeightKg, order.LengthCm, order.WidthCm, order.HeightCm))
-            throw new InvalidOperationException("The selected shipment exceeds the service-level constraints.");
+        var targets = await shipments.FindAsync(Specification<ShippingOrderEntity>.Where(s => shipmentIds.Contains(s.Id)), cancellationToken).ConfigureAwait(false);
+        foreach (var shipment in targets)
+        {
+            shipment.Status = status;
+        }
 
-        order.CalculatedPrice = CalculatePrice(
-            order.ShippingType,
-            order.DestinationZone,
-            order.ServiceLevel,
-            order.WeightKg,
-            order.LengthCm,
-            order.WidthCm,
-            order.HeightCm);
-
-        return _shippingRepository.Add(order);
+        await shipments.UpdateRangeAsync(targets.ToList(), cancellationToken).ConfigureAwait(false);
     }
 }

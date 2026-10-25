@@ -3,83 +3,61 @@ using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.RateLimiting;
+using ResourceManagementSystem.MVC.Composition;
 using ResourceManagementSystem.MVC.Models;
+using ResourceManagementSystem.MVC.Security;
+using ResourceManagementSystem.Utilities.Filters;
 using AppAuthenticationService = ResourceManagementSystem.Services.Authentication.IAuthenticationService;
-using System.Security.Claims;
 
 namespace ResourceManagementSystem.MVC.Controllers;
 
-public class AccountController : Controller
+public sealed class AccountController(AppAuthenticationService authentication) : ApexPostController
 {
-    private readonly AppAuthenticationService _authenticationService;
-
-    public AccountController(AppAuthenticationService authenticationService)
-    {
-        _authenticationService = authenticationService;
-    }
-
     [HttpGet]
     [AllowAnonymous]
-    public IActionResult Login(string? returnUrl = null)
-    {
-        return View(new LoginViewModel { ReturnUrl = returnUrl });
-    }
+    public IActionResult Login(string? returnUrl = null) =>
+        User.Identity?.IsAuthenticated == true
+            ? RedirectToAction("Index", "Home")
+            : View(new LoginViewModel { ReturnUrl = returnUrl });
 
+    /// <summary>Strict rate limit (brute-force protection); antiforgery is enforced globally.</summary>
     [HttpPost]
     [AllowAnonymous]
-    [ValidateAntiForgeryToken]
-    [EnableRateLimiting("login")]
-    public async Task<IActionResult> Login(LoginViewModel model, string? returnUrl = null)
+    [EnableRateLimiting(WebServiceRegistration.LoginRateLimitPolicy)]
+    [Audited("Account.Login", "Email")]
+    public async Task<IActionResult> Login(LoginViewModel model, CancellationToken cancellationToken)
     {
-        if (!ModelState.IsValid)
-        {
-            return View(model);
-        }
-
-        var staff = _authenticationService.AuthenticateStaff(model.Email, model.Password);
+        ArgumentNullException.ThrowIfNull(model);
+        var staff = await authentication.AuthenticateAsync(model.Email, model.Password, cancellationToken);
         if (staff is null)
         {
+            // Same message for unknown email, wrong password and inactive account.
             ModelState.AddModelError(string.Empty, "Invalid email or password.");
+            model.Password = string.Empty;
             return View(model);
         }
 
-        var claims = new List<Claim>
-        {
-            new(ClaimTypes.NameIdentifier, staff.Id.ToString()),
-            new(ClaimTypes.Name, staff.Name),
-            new(ClaimTypes.Email, staff.Email),
-            new("StaffId", staff.Id.ToString()),
-            new(ClaimTypes.Role, staff.Role.ToString()),
-            new("BranchCode", staff.HomeBranchCode),
-            new("BranchRole", staff.Role.ToString())
-        };
+        var principal = ClaimsPrincipalExtensions.CreatePrincipal(staff, CookieAuthenticationDefaults.AuthenticationScheme);
+        await HttpContext.SignInAsync(CookieAuthenticationDefaults.AuthenticationScheme, principal, new AuthenticationProperties { IsPersistent = false });
 
-        var identity = new ClaimsIdentity(claims, CookieAuthenticationDefaults.AuthenticationScheme);
-        var principal = new ClaimsPrincipal(identity);
+        // The cookie only takes effect on the next request; set the user now so the audit entry
+        // for this login records who signed in.
+        HttpContext.User = principal;
 
-        await HttpContext.SignInAsync(
-            CookieAuthenticationDefaults.AuthenticationScheme,
-            principal,
-            new AuthenticationProperties
-            {
-                IsPersistent = true,
-                ExpiresUtc = DateTimeOffset.UtcNow.AddHours(8),
-                RedirectUri = returnUrl ?? Url.Action("Index", "Home")
-            });
-
-        if (!string.IsNullOrWhiteSpace(returnUrl))
-        {
-            return LocalRedirect(returnUrl);
-        }
-
-        return RedirectToAction("Index", "Home");
+        // LocalRedirect: never follow an attacker-supplied absolute returnUrl (open redirect).
+        return !string.IsNullOrEmpty(model.ReturnUrl) && Url.IsLocalUrl(model.ReturnUrl)
+            ? LocalRedirect(model.ReturnUrl)
+            : RedirectToAction("Index", "Home");
     }
 
     [HttpPost]
-    [ValidateAntiForgeryToken]
     public async Task<IActionResult> Logout()
     {
         await HttpContext.SignOutAsync(CookieAuthenticationDefaults.AuthenticationScheme);
         return RedirectToAction(nameof(Login));
     }
+
+    [HttpGet]
+    [AllowAnonymous]
+    public IActionResult AccessDenied() => StatusCode(StatusCodes.Status403Forbidden);
 }

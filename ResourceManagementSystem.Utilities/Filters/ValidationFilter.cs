@@ -1,43 +1,75 @@
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.AspNetCore.Mvc.Controllers;
 using Microsoft.AspNetCore.Mvc.Filters;
+using Microsoft.AspNetCore.Mvc.ViewFeatures;
 
-namespace ResourceManagementSystem.Utilities;
+namespace ResourceManagementSystem.Utilities.Filters;
 
-public sealed class ValidationFilter : IAsyncActionFilter
+/// <summary>
+/// On an invalid model, redirect back to <see cref="Action"/> (with the errors in TempData) instead
+/// of redisplaying a view. Used by the basket screen, where several small forms post to different
+/// actions but all errors belong on the same page (Post/Redirect/Get even on failure).
+/// </summary>
+[AttributeUsage(AttributeTargets.Method, AllowMultiple = false)]
+public sealed class RedirectOnInvalidModelAttribute(string action) : Attribute
 {
+    public string Action { get; } = action;
+}
+
+/// <summary>
+/// Consistent handling of invalid model state, so actions don't each repeat
+/// <c>if (!ModelState.IsValid) return View(model);</c>:
+/// <list type="bullet">
+/// <item>API / JSON callers and GET requests (bad query string): 400 with ValidationProblemDetails.</item>
+/// <item>Actions with <see cref="RedirectOnInvalidModelAttribute"/>: errors to TempData, redirect.</item>
+/// <item>Other form posts: redisplay the action's view with the posted model and its errors.</item>
+/// </list>
+/// A filter (not middleware) because model binding and ModelState only exist inside MVC.
+/// </summary>
+public sealed class ValidationFilter(ITempDataDictionaryFactory tempDataFactory) : IAsyncActionFilter
+{
+    public const string ErrorsTempDataKey = "ValidationErrors";
+
     public async Task OnActionExecutionAsync(ActionExecutingContext context, ActionExecutionDelegate next)
     {
-        if (!context.ModelState.IsValid)
+        ArgumentNullException.ThrowIfNull(context);
+        ArgumentNullException.ThrowIfNull(next);
+
+        if (context.ModelState.IsValid)
         {
-            var acceptHeaders = context.HttpContext.Request.Headers.Accept;
-            var acceptsJson = acceptHeaders.Count > 0 && acceptHeaders.Any(a =>
-                !string.IsNullOrWhiteSpace(a) &&
-                a.Contains("application/json", StringComparison.OrdinalIgnoreCase));
-
-            if (context.HttpContext.Request.Method == HttpMethods.Get ||
-                acceptsJson ||
-                context.HttpContext.Request.ContentType?.Contains("application/json", StringComparison.OrdinalIgnoreCase) == true)
-            {
-                context.Result = new BadRequestObjectResult(context.ModelState);
-                return;
-            }
-
-            var controller = context.Controller as Controller;
-            var actionDescriptor = context.ActionDescriptor as ControllerActionDescriptor;
-            var viewName = actionDescriptor?.ActionName ?? "Index";
-            var model = context.ActionArguments.Count > 0 ? context.ActionArguments.First().Value : controller?.ViewData.Model;
-
-            if (controller is not null)
-            {
-                controller.ViewData.Model = model;
-            }
-
-            context.Result = new ViewResult { ViewName = viewName };
+            await next().ConfigureAwait(false);
             return;
         }
 
-        await next();
+        var http = context.HttpContext;
+        var isApi = DomainExceptionMapper.IsApiRequest(context.ActionDescriptor, http);
+
+        if (isApi || HttpMethods.IsGet(http.Request.Method))
+        {
+            context.Result = new BadRequestObjectResult(new ValidationProblemDetails(context.ModelState)
+            {
+                Status = StatusCodes.Status400BadRequest,
+                Title = "Validation failed",
+            });
+            return;
+        }
+
+        var redirect = context.ActionDescriptor.EndpointMetadata.OfType<RedirectOnInvalidModelAttribute>().FirstOrDefault();
+        if (redirect is not null)
+        {
+            var messages = context.ModelState.Values.SelectMany(v => v.Errors).Select(e => e.ErrorMessage).Where(m => m.Length > 0).ToArray();
+            tempDataFactory.GetTempData(http)[ErrorsTempDataKey] = string.Join("\n", messages);
+            context.Result = new RedirectToActionResult(redirect.Action, null, new { id = context.RouteData.Values["id"] });
+            return;
+        }
+
+        if (context.Controller is Controller controller)
+        {
+            var model = context.ActionArguments.Values.FirstOrDefault(v => v is not null && !v.GetType().IsPrimitive && v is not string);
+            context.Result = controller.View(model);
+            return;
+        }
+
+        context.Result = new BadRequestObjectResult(new ValidationProblemDetails(context.ModelState));
     }
 }

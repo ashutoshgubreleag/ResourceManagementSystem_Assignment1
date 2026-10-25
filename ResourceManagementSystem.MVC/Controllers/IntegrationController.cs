@@ -1,28 +1,60 @@
 using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Cors;
+using Microsoft.AspNetCore.Diagnostics;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.RateLimiting;
+using ResourceManagementSystem.MVC.Composition;
+using ResourceManagementSystem.Services.Courier;
 using ResourceManagementSystem.Utilities;
 
 namespace ResourceManagementSystem.MVC.Controllers;
 
-[ApiController]
-[Route("integration")]
-public class IntegrationController : ControllerBase
+/// <summary>
+/// Courier partner integration. No staff cookie: partners authenticate with an API key, enforced by
+/// middleware from the <see cref="ApiKeyRequiredAttribute"/> metadata, and are also IP-restricted
+/// (/integration prefix), rate limited per partner and CORS-limited to the tracking widget origin.
+/// </summary>
+[JsonApi]
+[AllowAnonymous]
+[ApiKeyRequired]
+[EnableRateLimiting(WebServiceRegistration.PartnerRateLimitPolicy)]
+[EnableCors(WebServiceRegistration.PartnerCorsPolicy)]
+public sealed class IntegrationController(ICourierTrackingService tracking) : Controller
 {
-    [HttpGet("parcel-status")]
-    [AllowAnonymous]
-    [ApiKeyRequired]
-    [EnableRateLimiting("partner")]
-    public IActionResult ParcelStatus()
+    [HttpGet]
+    [SkipStatusCodePages]
+    public async Task<IActionResult> ParcelStatus(string trackingNumber, CancellationToken cancellationToken)
     {
-        var payload = new
+        if (string.IsNullOrWhiteSpace(trackingNumber) || trackingNumber.Length > 32 || !trackingNumber.All(char.IsAsciiLetterOrDigit))
         {
-            status = "InTransit",
-            estimatedDelivery = DateTime.UtcNow.AddDays(2),
-            trackingId = "APX-TRACK-2026-001",
-            serviceLevel = "Express"
-        };
+            return BadRequest(new ProblemDetails { Status = 400, Title = "Invalid tracking number" });
+        }
 
-        return Ok(payload);
+        var result = await tracking.TrackAsync(trackingNumber, cancellationToken);
+
+        // Pattern matching on the result type maps each outcome to the right status code.
+        return result switch
+        {
+            TrackingResult.Found found => Json(new
+            {
+                trackingNumber = found.TrackingNumber,
+                status = found.Status,
+                lastScanLocation = found.LastScanLocation,
+                estimatedDelivery = found.EstimatedDelivery,
+            }),
+            TrackingResult.NotFound notFound => NotFound(new ProblemDetails
+            {
+                Status = 404,
+                Title = "Unknown tracking number",
+                Detail = $"No shipment with tracking number {notFound.TrackingNumber}.",
+            }),
+            TrackingResult.Unavailable unavailable => StatusCode(StatusCodes.Status503ServiceUnavailable, new ProblemDetails
+            {
+                Status = 503,
+                Title = "Tracking temporarily unavailable",
+                Detail = unavailable.Reason,
+            }),
+            _ => StatusCode(StatusCodes.Status500InternalServerError),
+        };
     }
 }
