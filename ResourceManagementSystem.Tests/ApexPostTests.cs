@@ -56,7 +56,7 @@ public class ApexPostBusinessRulesTests
     public void ParcelWeight_RejectsOverLimitForServiceLevel()
     {
         var repo = new InMemoryRepository<ShippingOrderEntity>();
-        var service = new ShippingService(repo);
+        var service = new ShippingService(repo, new DefaultShippingPricingStrategy());
 
         var isValid = service.IsValidForServiceLevel(ShippingType.Parcel, ShippingServiceLevel.Express, 4m);
 
@@ -67,7 +67,7 @@ public class ApexPostBusinessRulesTests
     public void CalculatePrice_ReturnsExpectedRateForLocalStandardParcel()
     {
         var repo = new InMemoryRepository<ShippingOrderEntity>();
-        var service = new ShippingService(repo);
+        var service = new ShippingService(repo, new DefaultShippingPricingStrategy());
 
         var result = service.CalculatePrice(ShippingType.Parcel, DestinationZone.Local, ShippingServiceLevel.Standard, 2m);
 

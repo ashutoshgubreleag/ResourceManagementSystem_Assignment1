@@ -1,162 +1,172 @@
-[
+{
+  "staffentitys": [
     {
-        "Id":  1,
-        "Name":  "System Administrator",
-        "HomeBranchCode":  "BR-001",
-        "Email":  "admin@apexpost.local",
-        "Role":  3,
-        "IsActive":  true
+      "Id": 1,
+      "Name": "System Administrator",
+      "Email": "admin@apexpost.local",
+      "Role": 3,
+      "HomeBranchCode": "BR-001",
+      "IsActive": true
     },
     {
-        "Id":  2,
-        "Name":  "North Branch Manager",
-        "HomeBranchCode":  "BR-001",
-        "Email":  "north.manager@apexpost.local",
-        "Role":  1,
-        "IsActive":  true
+      "Id": 2,
+      "Name": "North Branch Manager",
+      "Email": "north.manager@apexpost.local",
+      "Role": 1,
+      "HomeBranchCode": "BR-001",
+      "IsActive": true
     },
     {
-        "Id":  3,
-        "Name":  "East Branch Manager",
-        "HomeBranchCode":  "BR-002",
-        "Email":  "east.manager@apexpost.local",
-        "Role":  1,
-        "IsActive":  true
+      "Id": 3,
+      "Name": "East Branch Manager",
+      "Email": "east.manager@apexpost.local",
+      "Role": 1,
+      "HomeBranchCode": "BR-002",
+      "IsActive": true
     },
     {
-        "Id":  4,
-        "Name":  "South Branch Manager",
-        "HomeBranchCode":  "BR-004",
-        "Email":  "south.manager@apexpost.local",
-        "Role":  1,
-        "IsActive":  true
+      "Id": 4,
+      "Name": "South Branch Manager",
+      "Email": "south.manager@apexpost.local",
+      "Role": 1,
+      "HomeBranchCode": "BR-004",
+      "IsActive": true
     },
     {
-        "Id":  5,
-        "Name":  "West Branch Manager",
-        "HomeBranchCode":  "BR-005",
-        "Email":  "west.manager@apexpost.local",
-        "Role":  1,
-        "IsActive":  true
+      "Id": 5,
+      "Name": "West Branch Manager",
+      "Email": "west.manager@apexpost.local",
+      "Role": 1,
+      "HomeBranchCode": "BR-005",
+      "IsActive": true
     },
     {
-        "Id":  6,
-        "Name":  "Harbor Clerk",
-        "HomeBranchCode":  "BR-002",
-        "Email":  "harbor.clerk@apexpost.local",
-        "Role":  0,
-        "IsActive":  true
+      "Id": 6,
+      "Name": "Harbor Clerk",
+      "Email": "harbor.clerk@apexpost.local",
+      "Role": 0,
+      "HomeBranchCode": "BR-002",
+      "IsActive": true
     },
     {
-        "Id":  7,
-        "Name":  "Central Clerk",
-        "HomeBranchCode":  "BR-001",
-        "Email":  "central.clerk@apexpost.local",
-        "Role":  0,
-        "IsActive":  true
+      "Id": 7,
+      "Name": "Central Clerk",
+      "Email": "central.clerk@apexpost.local",
+      "Role": 0,
+      "HomeBranchCode": "BR-001",
+      "IsActive": true
     },
     {
-        "Id":  8,
-        "Name":  "Riverside Clerk",
-        "HomeBranchCode":  "BR-004",
-        "Email":  "river.clerk@apexpost.local",
-        "Role":  0,
-        "IsActive":  true
+      "Id": 8,
+      "Name": "Riverside Clerk",
+      "Email": "river.clerk@apexpost.local",
+      "Role": 0,
+      "HomeBranchCode": "BR-004",
+      "IsActive": true
     },
     {
-        "Id":  9,
-        "Name":  "Hillcrest Clerk",
-        "HomeBranchCode":  "BR-005",
-        "Email":  "hill.clerk@apexpost.local",
-        "Role":  0,
-        "IsActive":  true
+      "Id": 9,
+      "Name": "Hillcrest Clerk",
+      "Email": "hill.clerk@apexpost.local",
+      "Role": 0,
+      "HomeBranchCode": "BR-005",
+      "IsActive": true
     },
     {
-        "Id":  10,
-        "Name":  "Hub Counter Clerk",
-        "HomeBranchCode":  "BR-003",
-        "Email":  "hub.clerk@apexpost.local",
-        "Role":  0,
-        "IsActive":  true
+      "Id": 10,
+      "Name": "Hub Counter Clerk",
+      "Email": "hub.clerk@apexpost.local",
+      "Role": 0,
+      "HomeBranchCode": "BR-003",
+      "IsActive": true
     },
     {
-        "Id":  11,
-        "Name":  "Metro Counter Clerk",
-        "HomeBranchCode":  "BR-003",
-        "Email":  "metro.clerk@apexpost.local",
-        "Role":  0,
-        "IsActive":  true
+      "Id": 11,
+      "Name": "Metro Counter Clerk",
+      "Email": "metro.clerk@apexpost.local",
+      "Role": 0,
+      "HomeBranchCode": "BR-003",
+      "IsActive": true
     },
     {
-        "Id":  12,
-        "Name":  "Riverside Auditor",
-        "HomeBranchCode":  "BR-004",
-        "Email":  "riverside.auditor@apexpost.local",
-        "Role":  2,
-        "IsActive":  true
+      "Id": 12,
+      "Name": "Riverside Auditor",
+      "Email": "riverside.auditor@apexpost.local",
+      "Role": 2,
+      "HomeBranchCode": "BR-004",
+      "IsActive": true
     },
     {
-        "Id":  13,
-        "Name":  "Audit Review Specialist",
-        "HomeBranchCode":  "BR-001",
-        "Email":  "audit.review@apexpost.local",
-        "Role":  2,
-        "IsActive":  true
+      "Id": 13,
+      "Name": "Audit Review Specialist",
+      "Email": "audit.review@apexpost.local",
+      "Role": 2,
+      "HomeBranchCode": "BR-001",
+      "IsActive": true
     },
     {
-        "Id":  14,
-        "Name":  "Audit Operations Lead",
-        "HomeBranchCode":  "BR-005",
-        "Email":  "audit.ops@apexpost.local",
-        "Role":  2,
-        "IsActive":  true
+      "Id": 14,
+      "Name": "Audit Operations Lead",
+      "Email": "audit.ops@apexpost.local",
+      "Role": 2,
+      "HomeBranchCode": "BR-005",
+      "IsActive": true
     },
     {
-        "Id":  15,
-        "Name":  "Systems Administrator",
-        "HomeBranchCode":  "BR-003",
-        "Email":  "systems.admin@apexpost.local",
-        "Role":  3,
-        "IsActive":  true
+      "Id": 15,
+      "Name": "Systems Administrator",
+      "Email": "systems.admin@apexpost.local",
+      "Role": 3,
+      "HomeBranchCode": "BR-003",
+      "IsActive": true
     },
     {
-        "Id":  16,
-        "Name":  "Terminal Clerk",
-        "HomeBranchCode":  "BR-001",
-        "Email":  "terminal.clerk@apexpost.local",
-        "Role":  0,
-        "IsActive":  true
+      "Id": 16,
+      "Name": "Terminal Clerk",
+      "Email": "terminal.clerk@apexpost.local",
+      "Role": 0,
+      "HomeBranchCode": "BR-001",
+      "IsActive": true
     },
     {
-        "Id":  17,
-        "Name":  "Cargo Desk Clerk",
-        "HomeBranchCode":  "BR-002",
-        "Email":  "cargo.clerk@apexpost.local",
-        "Role":  0,
-        "IsActive":  true
+      "Id": 17,
+      "Name": "Cargo Desk Clerk",
+      "Email": "cargo.clerk@apexpost.local",
+      "Role": 0,
+      "HomeBranchCode": "BR-002",
+      "IsActive": true
     },
     {
-        "Id":  18,
-        "Name":  "Service Desk Clerk",
-        "HomeBranchCode":  "BR-004",
-        "Email":  "service.clerk@apexpost.local",
-        "Role":  0,
-        "IsActive":  true
+      "Id": 18,
+      "Name": "Service Desk Clerk",
+      "Email": "service.clerk@apexpost.local",
+      "Role": 0,
+      "HomeBranchCode": "BR-004",
+      "IsActive": true
     },
     {
-        "Id":  19,
-        "Name":  "Dispatch Operations Clerk",
-        "HomeBranchCode":  "BR-005",
-        "Email":  "dispatch.clerk@apexpost.local",
-        "Role":  0,
-        "IsActive":  true
+      "Id": 19,
+      "Name": "Dispatch Operations Clerk",
+      "Email": "dispatch.clerk@apexpost.local",
+      "Role": 0,
+      "HomeBranchCode": "BR-005",
+      "IsActive": true
     },
     {
-        "Id":  20,
-        "Name":  "Support Coordinator",
-        "HomeBranchCode":  "BR-003",
-        "Email":  "support.coordinator@apexpost.local",
-        "Role":  0,
-        "IsActive":  true
+      "Id": 20,
+      "Name": "Support Coordinator",
+      "Email": "support.coordinator@apexpost.local",
+      "Role": 0,
+      "HomeBranchCode": "BR-003",
+      "IsActive": true
+    },
+    {
+      "Id": 21,
+      "Name": "Ashutosh Gubrele",
+      "Email": "ashutosh.gubrele@gmail.com",
+      "Role": 0,
+      "HomeBranchCode": "BR-IND-INDORE",
+      "IsActive": true
     }
-]
+  ]
+}

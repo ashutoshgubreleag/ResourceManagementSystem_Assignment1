@@ -5,6 +5,7 @@ namespace ResourceManagementSystem.Services.Staff;
 public interface IStaffService
 {
     StaffEntity AddStaff(StaffEntity staff);
+    StaffEntity UpdateStaff(StaffEntity staff);
     IEnumerable<StaffEntity> GetAll();
     StaffEntity? GetById(int id);
     IEnumerable<StaffEntity> GetByBranch(string branchCode);

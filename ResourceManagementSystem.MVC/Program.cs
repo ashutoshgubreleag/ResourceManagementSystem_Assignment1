@@ -13,6 +13,7 @@ using ResourceManagementSystem.Services.Shipping;
 using ResourceManagementSystem.Services.Staff;
 using ResourceManagementSystem.Services.Transactions;
 using ResourceManagementSystem.Utilities;
+using ResourceManagementSystem.Utilities.Middleware;
 using System.Net;
 using System.Threading.RateLimiting;
 
@@ -97,6 +98,7 @@ builder.Services.AddScoped<IAuthenticationService, AuthenticationService>();
 builder.Services.AddScoped<IBranchService, BranchService>();
 builder.Services.AddScoped<IStaffService, StaffService>();
 builder.Services.AddScoped<IInventoryService, InventoryService>();
+builder.Services.AddScoped<IShippingPricingStrategy, DefaultShippingPricingStrategy>();
 builder.Services.AddScoped<IShippingService, ShippingService>();
 builder.Services.AddScoped<IMoneyOrderService, MoneyOrderService>();
 builder.Services.AddScoped<ITransactionService, TransactionService>();
