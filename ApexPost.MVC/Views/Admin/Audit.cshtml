@@ -1,0 +1,26 @@
+@model IReadOnlyList<ApexPost.Utilities.Audit.AuditEntry>
+@{
+    ViewData["Title"] = "Audit log";
+}
+<h1>Audit log</h1>
+<p class="lead">Append-only record of business actions (most recent first). Written by the AuditActionFilter; no passwords, document numbers, keys or card data.</p>
+<div class="card table-wrap">
+    <table>
+        <thead><tr><th>When (UTC)</th><th>Action</th><th>Staff</th><th>Branch</th><th>Key values</th><th>Outcome</th><th class="num">ms</th><th>Correlation ID</th></tr></thead>
+        <tbody>
+            @foreach (var e in Model)
+            {
+                <tr>
+                    <td>@e.TimestampUtc.ToString("dd MMM HH:mm:ss")</td>
+                    <td>@e.Action<div class="help">@e.HttpMethod @e.Path</div></td>
+                    <td>@e.StaffId <span class="help">@e.Role</span></td>
+                    <td class="mono">@e.BranchCode</td>
+                    <td class="mono">@string.Join(", ", e.RouteValues.Concat(e.Fields).Select(kv => $"{kv.Key}={kv.Value}"))</td>
+                    <td><span class="badge @(e.Outcome == "Succeeded" ? "ok" : e.Outcome == "Rejected" ? "warn" : "bad")">@e.StatusCode @e.Outcome</span> @e.Error</td>
+                    <td class="num">@e.DurationMs</td>
+                    <td class="mono wrap">@e.CorrelationId</td>
+                </tr>
+            }
+        </tbody>
+    </table>
+</div>

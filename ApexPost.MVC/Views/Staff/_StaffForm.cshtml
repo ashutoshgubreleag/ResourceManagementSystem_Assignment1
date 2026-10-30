@@ -1,0 +1,34 @@
+@model StaffFormViewModel
+@inject ApexPost.Services.Branch.IBranchService BranchService
+@{
+    var branches = await BranchService.GetAllAsync(Context.RequestAborted);
+    var isEdit = Model.Id > 0;
+}
+<form asp-action="@(isEdit ? "Edit" : "Create")" asp-route-id="@(isEdit ? Model.Id : null)" method="post" class="card stack">
+    <partial name="_ValidationSummary" />
+    <div class="form-grid">
+        <div><label asp-for="Name"></label><input asp-for="Name" /><span asp-validation-for="Name" class="field-error"></span></div>
+        <div><label asp-for="Email"></label><input asp-for="Email" type="email" /><span asp-validation-for="Email" class="field-error"></span></div>
+        <div><label asp-for="Role"></label><select asp-for="Role" asp-items="Html.GetEnumSelectList<StaffRole>()"></select></div>
+        <div>
+            <label asp-for="HomeBranchCode"></label>
+            <select asp-for="HomeBranchCode">
+                @foreach (var b in branches)
+                {
+                    <option value="@b.BranchCode.Value" selected="@(b.BranchCode.Value == Model.HomeBranchCode)">@b.BranchCode · @b.Name</option>
+                }
+            </select>
+        </div>
+        <div>
+            <label asp-for="Password">@(isEdit ? "New password (optional)" : "Initial password")</label>
+            <input asp-for="Password" autocomplete="new-password" />
+            <div class="help">At least 10 characters. Stored only as a PBKDF2 hash.</div>
+            <span asp-validation-for="Password" class="field-error"></span>
+        </div>
+        <div><label class="check"><input asp-for="IsActive" /> Active</label></div>
+    </div>
+    <div class="row">
+        <button type="submit" class="btn">Save</button>
+        <a class="btn secondary" asp-action="Index">Cancel</a>
+    </div>
+</form>

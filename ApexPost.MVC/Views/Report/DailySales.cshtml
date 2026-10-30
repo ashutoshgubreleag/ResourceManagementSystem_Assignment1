@@ -1,0 +1,25 @@
+@model ApexPost.Services.Reports.DailySalesReport
+@{
+    ViewData["Title"] = "Daily branch sales";
+    var branch = Context.Request.Query["branch"].ToString();
+}
+<div class="page-head">
+    <div><h1>Daily branch sales</h1><p class="lead">@Model.Date.ToString("dddd d MMMM yyyy") (UTC). Amounts exclude tax unless stated.</p></div>
+    <form method="get" class="row">
+        <div><label for="date">Date</label><input id="date" type="date" name="date" value="@Model.Date.ToString("yyyy-MM-dd")" /></div>
+        <partial name="_BranchFilter" model="branch" />
+        <div><label>&nbsp;</label><button class="btn secondary" type="submit">Run</button></div>
+    </form>
+</div>
+<div class="card table-wrap">
+    <table>
+        <thead><tr><th>Branch</th><th class="num">Paid tx</th><th class="num">Retail</th><th class="num">Services</th><th class="num">Tax</th><th class="num">MO face value</th><th class="num">Total taken</th><th class="num">Voided</th><th class="num">Refunded</th></tr></thead>
+        <tbody>
+            @foreach (var r in Model.Rows)
+            {
+                <tr><td><span class="mono">@r.BranchCode</span> @r.BranchName</td><td class="num">@r.TransactionCount</td><td class="num">@r.RetailNet</td><td class="num">@r.ServicesNet</td><td class="num">@r.Tax</td><td class="num">@r.PassThrough</td><td class="num">@r.Total</td><td class="num">@r.VoidedCount</td><td class="num">@r.RefundedCount</td></tr>
+            }
+        </tbody>
+        <tfoot><tr><td>Total</td><td class="num">@Model.TransactionCount</td><td class="num">@Model.RetailNet</td><td class="num">@Model.ServicesNet</td><td class="num">@Model.Tax</td><td></td><td class="num">@Model.Total</td><td></td><td></td></tr></tfoot>
+    </table>
+</div>

@@ -13,7 +13,7 @@ TestResults/
 *.user
 *.suo
 
-## Runtime data written by the app (seed data lives in ResourceManagementSystem.Database/JSONs)
+## Runtime data written by the app (seed data lives in ApexPost.Database/JSONs)
 **/App_Data/
 *.jsonl
 *.json.tmp

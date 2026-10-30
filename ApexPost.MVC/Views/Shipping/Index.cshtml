@@ -1,0 +1,42 @@
+@model QuoteFormViewModel
+@{
+    ViewData["Title"] = "Postage calculator";
+    var quote = ViewData["Quote"] is string json ? System.Text.Json.JsonSerializer.Deserialize<ApexPost.MVC.Controllers.QuoteSummary>(json) : null;
+}
+<h1>Postage calculator</h1>
+<p class="lead">Price a letter or parcel without adding it to a basket. Limits: letters 0.5 kg and 2 cm thick; parcels 22 kg Standard, 20 kg Express, 5 kg Registered.</p>
+<div class="grid cols-2">
+    <form asp-action="Index" method="post" class="card stack">
+        <partial name="_ValidationSummary" />
+        <div class="form-grid">
+            <div><label asp-for="ShippingType">Type</label><select asp-for="ShippingType" asp-items="Html.GetEnumSelectList<ShippingType>()"></select></div>
+            <div><label asp-for="ServiceLevel">Service level</label><select asp-for="ServiceLevel" asp-items="Html.GetEnumSelectList<ShippingServiceLevel>()"></select></div>
+            <div><label asp-for="ZoneCode">Destination zone</label><select asp-for="ZoneCode"><partial name="_ZoneOptions" model="Model.ZoneCode" /></select></div>
+            <div><label asp-for="WeightKg">Weight (kg)</label><input asp-for="WeightKg" type="number" step="0.001" /></div>
+            <div><label asp-for="LengthCm">Length (cm)</label><input asp-for="LengthCm" type="number" step="0.1" /></div>
+            <div><label asp-for="WidthCm">Width (cm)</label><input asp-for="WidthCm" type="number" step="0.1" /></div>
+            <div><label asp-for="HeightCm">Height (cm)</label><input asp-for="HeightCm" type="number" step="0.1" /></div>
+        </div>
+        <div class="row"><button type="submit" class="btn">Calculate</button></div>
+    </form>
+    @if (quote is not null)
+    {
+        <div class="card">
+            <h2>Quote</h2>
+            <table class="totals">
+                <tr><td>Destination</td><td class="num">@quote.Zone</td></tr>
+                <tr><td>Service</td><td class="num">@quote.Service</td></tr>
+                <tr><td>Chargeable weight</td><td class="num">@quote.ChargeableWeight</td></tr>
+                <tr><td>Base postage</td><td class="num">@quote.BasePostage</td></tr>
+                <tr><td>Service loading</td><td class="num">@quote.ServiceLoading</td></tr>
+                @foreach (var s in quote.Surcharges)
+                {
+                    <tr><td colspan="2" class="num">@s</td></tr>
+                }
+                <tr><td>Net</td><td class="num">@quote.Net</td></tr>
+                <tr><td>Tax (@quote.TaxCategory)</td><td class="num">@quote.Tax</td></tr>
+                <tr class="grand"><td>Total</td><td class="num">@quote.Total</td></tr>
+            </table>
+        </div>
+    }
+</div>

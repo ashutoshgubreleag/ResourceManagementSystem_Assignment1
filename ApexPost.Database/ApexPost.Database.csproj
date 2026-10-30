@@ -1,0 +1,14 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <!--
+    Persistence models and seed data. No ORM this week: entities are plain classes that the
+    Repositories layer serialises to JSON. Next week's database replaces only that layer.
+  -->
+  <ItemGroup>
+    <ProjectReference Include="..\ApexPost.Models\ApexPost.Models.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <!-- Seed files are copied next to the app; on first run they are copied into the data directory. -->
+    <None Include="JSONs\*Entity.json" CopyToOutputDirectory="PreserveNewest" Link="SeedData\%(Filename)%(Extension)" />
+  </ItemGroup>
+</Project>

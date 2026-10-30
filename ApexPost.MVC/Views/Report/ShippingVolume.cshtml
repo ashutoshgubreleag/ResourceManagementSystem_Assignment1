@@ -1,0 +1,26 @@
+@model ApexPost.Services.Reports.ShippingVolumeReport
+@{
+    ViewData["Title"] = "Shipping volume";
+    var branch = Context.Request.Query["branch"].ToString();
+}
+<div class="page-head">
+    <div><h1>Shipping volume</h1><p class="lead">Lodged items @Model.From.ToString("d MMM") – @Model.To.ToString("d MMM yyyy") by zone and service level.</p></div>
+    <form method="get" class="row">
+        <div><label for="from">From</label><input id="from" type="date" name="from" value="@Model.From.ToString("yyyy-MM-dd")" /></div>
+        <div><label for="to">To</label><input id="to" type="date" name="to" value="@Model.To.ToString("yyyy-MM-dd")" /></div>
+        <partial name="_BranchFilter" model="branch" />
+        <div><label>&nbsp;</label><button class="btn secondary" type="submit">Run</button></div>
+    </form>
+</div>
+<div class="card table-wrap">
+    <table>
+        <thead><tr><th>Zone</th><th>Service level</th><th class="num">Items</th><th class="num">Total weight</th><th class="num">Postage (ex tax)</th></tr></thead>
+        <tbody>
+            @foreach (var r in Model.Rows)
+            {
+                <tr><td><span class="mono">@r.ZoneCode</span> @r.ZoneName</td><td>@r.ServiceLevel</td><td class="num">@r.Count</td><td class="num">@r.TotalWeight</td><td class="num">@r.Revenue</td></tr>
+            }
+        </tbody>
+        <tfoot><tr><td colspan="2">Total</td><td class="num">@Model.TotalCount</td><td></td><td class="num">@Model.TotalRevenue</td></tr></tfoot>
+    </table>
+</div>

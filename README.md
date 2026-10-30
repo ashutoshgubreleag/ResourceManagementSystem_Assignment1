@@ -4,7 +4,7 @@ ApexPost is a national postal, shipping and retail services provider. This is th
 its branches use. From one counter, staff sell retail goods (packaging, stationery, office supplies)
 alongside letters and parcels, money orders and identity verification. It is an ASP.NET Core MVC
 app on .NET 10 / C# 14 with JSON-file persistence behind repository interfaces, and it replaces the
-Week 1 TechNova Resource Management System.
+Week 1 TechNova resource-allocation console app.
 
 * Architecture, middleware order, ADRs, security and audit design: **[DESIGN.md](DESIGN.md)**
 * Sample audit entries produced by the audit filter: **[AUDIT-SAMPLE.json](AUDIT-SAMPLE.json)**
@@ -16,13 +16,13 @@ Week 1 TechNova Resource Management System.
 
 | Project | Role |
 | --- | --- |
-| `ResourceManagementSystem.Models` | Domain primitives: value objects (`Money`, `Weight`, `Dimensions`, `Address`, `BranchCode`, `Sku`, `MaskedDocumentNumber`), C# 14 extension members, rule attributes + cached reflection validator, domain exceptions |
-| `ResourceManagementSystem.Database` | Persistence entities and enums, plus seed data in `JSONs/` |
-| `ResourceManagementSystem.Repositories` | `IBaseEntityRepository<T>` and the async `BaseJsonRepository<T>`, specifications, JSON converters, seeder |
-| `ResourceManagementSystem.Services` | All business logic: branches, staff, catalogue, inventory, shipping and pricing, money orders, transactions, reports, dashboard, events and notifications, courier simulation |
-| `ResourceManagementSystem.Utilities` | Middleware, MVC filters, the append-only audit store, the global exception handler |
-| `ResourceManagementSystem.MVC` | Composition root (`Program.cs`), authentication and policies, thin controllers, Razor views |
-| `ResourceManagementSystem.Tests` | xUnit unit tests and WebApplicationFactory integration tests (111 tests) |
+| `ApexPost.Models` | Domain primitives: value objects (`Money`, `Weight`, `Dimensions`, `Address`, `BranchCode`, `Sku`, `MaskedDocumentNumber`), C# 14 extension members, rule attributes + cached reflection validator, domain exceptions |
+| `ApexPost.Database` | Persistence entities and enums, plus seed data in `JSONs/` |
+| `ApexPost.Repositories` | `IBaseEntityRepository<T>` and the async `BaseJsonRepository<T>`, specifications, JSON converters, seeder |
+| `ApexPost.Services` | All business logic: branches, staff, catalogue, inventory, shipping and pricing, money orders, transactions, reports, dashboard, events and notifications, courier simulation |
+| `ApexPost.Utilities` | Middleware, MVC filters, the append-only audit store, the global exception handler |
+| `ApexPost.MVC` | Composition root (`Program.cs`), authentication and policies, thin controllers, Razor views |
+| `ApexPost.Tests` | xUnit unit tests and WebApplicationFactory integration tests (111 tests) |
 
 Flow: **Controller → Service → Repository → JSON file**. Controllers never touch repositories, and
 business rules live only in services.
@@ -37,12 +37,12 @@ business rules live only in services.
 ## Run
 
 ```powershell
-dotnet restore .\ResourceManagementSystem.slnx
-dotnet run --project .\ResourceManagementSystem.MVC --launch-profile https
+dotnet restore .\ApexPost.slnx
+dotnet run --project .\ApexPost.MVC --launch-profile https
 ```
 
 Open **https://localhost:7052**. On first start the seed files are copied to
-`ResourceManagementSystem.MVC\App_Data\` (git-ignored); runtime changes and the audit log
+`ApexPost.MVC\App_Data\` (git-ignored); runtime changes and the audit log
 (`audit-log.jsonl`) are written there. Delete `App_Data` to reset the demo data.
 
 ## Demo accounts
@@ -69,8 +69,8 @@ The courier-partner endpoint `GET /integration/parcel-status/{trackingNumber}` r
 header. Keys are configured **per partner** and never committed:
 
 ```powershell
-dotnet user-secrets set "Integration:Partners:swiftcourier" "<a-long-random-key>" --project .\ResourceManagementSystem.MVC
-dotnet user-secrets list --project .\ResourceManagementSystem.MVC
+dotnet user-secrets set "Integration:Partners:swiftcourier" "<a-long-random-key>" --project .\ApexPost.MVC
+dotnet user-secrets list --project .\ApexPost.MVC
 ```
 
 (In other environments use the environment variable `Integration__Partners__swiftcourier`.)
@@ -163,8 +163,8 @@ the base URL and API key.
 ## Tests
 
 ```powershell
-dotnet build .\ResourceManagementSystem.slnx   # zero warnings: TreatWarningsAsErrors is on
-dotnet test  .\ResourceManagementSystem.slnx
+dotnet build .\ApexPost.slnx   # zero warnings: TreatWarningsAsErrors is on
+dotnet test  .\ApexPost.slnx
 ```
 
 There are 111 tests. **Unit tests** cover the stock rule (including concurrent overselling), the

@@ -1,9 +1,0 @@
-@model string
-@inject ResourceManagementSystem.Services.Shipping.IShippingService ShippingService
-@{
-    var zones = await ShippingService.GetZonesAsync(Context.RequestAborted);
-}
-@foreach (var z in zones)
-{
-    <option value="@z.ZoneCode" selected="@(z.ZoneCode == Model)">@z.ZoneCode · @z.Name@(z.IsInternational ? " (international)" : "")</option>
-}

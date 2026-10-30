@@ -1,0 +1,18 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <!--
+    Business logic. Uses only Microsoft.Extensions.* (logging, options, caching, hosting) from the
+    shared framework; it does not reference the web layer or Utilities.
+  -->
+  <ItemGroup>
+    <FrameworkReference Include="Microsoft.AspNetCore.App" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\ApexPost.Models\ApexPost.Models.csproj" />
+    <ProjectReference Include="..\ApexPost.Repositories\ApexPost.Repositories.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <InternalsVisibleTo Include="ApexPost.Tests" />
+  </ItemGroup>
+</Project>

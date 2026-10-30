@@ -1,0 +1,16 @@
+<Project Sdk="Microsoft.NET.Sdk.Web">
+  <!-- Presentation layer: composition root, pipeline, thin controllers and Razor views. -->
+  <PropertyGroup>
+    <!-- dotnet user-secrets set "Integration:Partners:swiftcourier" "<key>" stores the key outside the repo. -->
+    <UserSecretsId>apexpost-counter-platform-5d1f0c2e</UserSecretsId>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\ApexPost.Services\ApexPost.Services.csproj" />
+    <ProjectReference Include="..\ApexPost.Utilities\ApexPost.Utilities.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <InternalsVisibleTo Include="ApexPost.Tests" />
+  </ItemGroup>
+</Project>

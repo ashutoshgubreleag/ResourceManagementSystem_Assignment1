@@ -1,6 +1,6 @@
 # ApexPost Counter Platform: Design (Week 2)
 
-This document explains how the Week 1 TechNova Resource Management System became the ApexPost
+This document explains how the Week 1 TechNova resource-allocation console app became the ApexPost
 Counter Platform, and why each decision was made. It covers the architecture, the domain model,
 the middleware pipeline, filters, concurrency, security and auditing, and the Architecture
 Decision Records (ADRs) for Week 2.
@@ -48,34 +48,34 @@ ADR-W2-01 records this decision.
 
 ```mermaid
 flowchart TB
-    subgraph Presentation["ResourceManagementSystem.MVC (presentation + composition root)"]
+    subgraph Presentation["ApexPost.MVC (presentation + composition root)"]
         Program["Program.cs: pipeline only"]
         Controllers["Thin controllers"]
         Views["Razor views (no inline script/style)"]
         Security["Policies, SameBranch handler, claims extensions"]
     end
-    subgraph CrossCutting["ResourceManagementSystem.Utilities (cross-cutting)"]
+    subgraph CrossCutting["ApexPost.Utilities (cross-cutting)"]
         Middleware["Middleware: correlation, logging, maintenance, security headers, IP, API key"]
         Filters["Filters: audit, validation, performance, domain exceptions"]
         Audit["IAuditStore → append-only JSONL"]
         ExHandler["GlobalExceptionHandler (Problem Details)"]
     end
-    subgraph Business["ResourceManagementSystem.Services (business logic)"]
+    subgraph Business["ApexPost.Services (business logic)"]
         Svc["Branch, Staff, Catalog, Inventory, Shipping, MoneyOrder, Transaction, Report, Dashboard"]
         Rules["BusinessRules (delegates), TaxRules, ServiceLevelRules, pricing strategy"]
         Events["IApexPostEvents (observer) → NotificationDispatcher (bounded Channel)"]
         Cache["ReferenceDataCache (IMemoryCache + ValueTask)"]
         Courier["Simulated courier: SemaphoreSlim + timeout"]
     end
-    subgraph Data["ResourceManagementSystem.Repositories (data access)"]
+    subgraph Data["ApexPost.Repositories (data access)"]
         Repo["IBaseEntityRepository&lt;T&gt; / BaseJsonRepository&lt;T&gt;"]
         Spec["Specification&lt;T&gt;"]
     end
-    subgraph Persistence["ResourceManagementSystem.Database"]
+    subgraph Persistence["ApexPost.Database"]
         Entities["Entities (BranchEntity, TransactionEntity, ...)"]
         Seed[("JSONs/*.json seed data")]
     end
-    subgraph Primitives["ResourceManagementSystem.Models (domain primitives)"]
+    subgraph Primitives["ApexPost.Models (domain primitives)"]
         VO["Value objects + C# 14 extension members"]
         Val["Rule attributes + ReflectionValidator"]
         Ex["Domain exceptions, CorrelationContext"]
@@ -454,10 +454,13 @@ middleware for security, realistic seed data). The following are **new for Week 
 
 * **Context:** The domain changed from resource allocation to a postal retail counter. The brief
   asks whether the Week 1 architecture survives.
-* **Decision:** Keep the seven projects and the Controller → Service → Repository rule. Redesign
-  inside them: an async generic repository, value objects in Models, no EF, Services no longer
-  depending on Utilities, the legacy console project removed, and seed data separated from runtime
-  data.
+* **Decision:** Keep the seven layer projects and the Controller → Service → Repository rule, but
+  rename them for the new domain (`ApexPost.Models`, `ApexPost.Database`, `ApexPost.Repositories`,
+  `ApexPost.Services`, `ApexPost.Utilities`, `ApexPost.MVC`, `ApexPost.Tests`). Projects, namespaces
+  and the solution file now use the product name, so nothing in the code base suggests the old
+  domain. Redesign inside them: an async generic repository, value objects in Models, no EF,
+  Services no longer depending on Utilities, the legacy console project and its EF Core placeholders
+  removed, and seed data separated from runtime data.
 * **Consequences:** Team members (and graders) recognise the structure. Next week's database swap
   touches one class. The cost is a rewrite of most files, but the shape is stable.
 
